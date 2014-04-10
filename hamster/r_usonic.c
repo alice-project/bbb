@@ -60,12 +60,18 @@ void *usonic_sensor_scan(void *data)
 
   #ifdef DEBUG
     printf("usonic Scanning...\n");
-  #endif    
+  #endif
 
-    while(1)
+i=0;
+printf("DIR=%d\n", gpio_get_dir(usonic_pin[i][0], usonic_pin[i][1]));
+gpio_print_mode(usonic_pin[i][0], usonic_pin[i][1]);
+printf("DIR=%d\n", gpio_get_dir(usonic_pin[i][2], usonic_pin[i][3]));
+gpio_print_mode(usonic_pin[i][2], usonic_pin[i][3]);
+
+#if 1
+    for(;;)
     {
 //        for(i = 0;i < MAX_USONIC;i++)
-i=0;
         {
             gettimeofday(&tm_current, NULL);
             ms_diff = (tm_current.tv_sec - tm_start[i].tv_sec) * 1000 + tm_current.tv_usec - tm_start[i].tv_usec;
@@ -76,6 +82,8 @@ i=0;
                 {
                     printf("state ERROR\n");
                     stop_usonic_detect(i);
+printf("DIR=%d\n", gpio_get_dir(usonic_pin[i][0], usonic_pin[i][1]));
+gpio_print_mode(usonic_pin[i][0], usonic_pin[i][1]);
                     continue;
                 }
 
@@ -114,6 +122,7 @@ gpio_print_mode(usonic_pin[i][2], usonic_pin[i][3]);
         }
         usleep(10);
     }
+#endif
     return NULL;
 }
 

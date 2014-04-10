@@ -36,6 +36,7 @@ int main(int argc, char *argv[])
 
     pthread_t tm_thread;
     pthread_t sonic_thread;
+    pthread_t comm_thread;
 
     if(system_init() < 0)
         return -1;

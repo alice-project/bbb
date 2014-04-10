@@ -65,11 +65,10 @@ enum {
 int gpio_init();
 int gpio_exit();
 int gpio_set_dir(int connector, int pin, int dir);
-void set_pin_high(int connector, int pin);
-void set_pin_low(int connector, int pin);
+int set_pin_high(int connector, int pin);
+int set_pin_low(int connector, int pin);
 int is_pin_high(int connector, int pin);
 int is_pin_low(int connector, int pin);
-int gpio_set_mode(int connector, int pin, int mode);
 void regist_gpio(int connector, int pin, int dir);
 int gpio_get_dir(int connector, int pin);
 void gpio_print_mode(int connector, int pin);
