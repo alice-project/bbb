@@ -10,7 +10,8 @@
 #include <gdk/gdkkeysyms.h>
 
 #define MAX_HAMTERS 16
-#define MY_IP  "10.44.124.179"
+
+extern unsigned int d_my_ipaddr;
 
 GSList *g_watchers = NULL;
 pthread_t hamter_thread[MAX_HAMTERS] = {0};
@@ -67,8 +68,6 @@ void *hamter_func(void *data)
     return;
 }
 
-#define LOCAL_IPADDR  "10.43.165.151"
-#define SERVER_PORT   82
 gpointer start_watching()
 {
     int s_fd, c_fd;
@@ -85,7 +84,7 @@ gpointer start_watching()
     
     memset((void *)&s_addr, 0, sizeof(s_addr));
     s_addr.sin_family = AF_INET;
-    s_addr.sin_addr.s_addr = htonl(MY_IP);
+    s_addr.sin_addr.s_addr = htonl(d_my_ipaddr);
     s_addr.sin_port = htons(BASE_PORT);
     
     if(bind(s_fd, (struct sockaddr *)&s_addr, sizeof(s_addr)) < 0)
@@ -118,7 +117,7 @@ gpointer start_watching()
                 close(s_fd);
                 return NULL;
             }
-	    g_hamter_id++;
+	        g_hamter_id++;
         }
     }
     

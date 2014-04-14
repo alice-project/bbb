@@ -3,23 +3,58 @@
 #include <string.h>
 #include <sys/types.h>
 #include <sys/socket.h>
+#include <sys/ioctl.h>
 #include <netinet/in.h>
+#include <arpa/inet.h>
+#include <net/if.h>
 #include <pthread.h>
+#include <netdb.h>
 
 #include <gtk/gtk.h>
 #include <gdk/gdkkeysyms.h>
 
+#include "pub.h"
 #include "map.h"
 #include "watcher.h"
+
+char         *s_my_ipaddr;
+unsigned int d_my_ipaddr;
 
 GtkTextBuffer *log_buf;
 
 static void socket_connect();
 
-#define BASE_PORT  8888
-
 GtkWidget* create_toolbar();
 static void create_layout();
+
+static inline void BASE_LOG(char *buffer)
+{
+    GtkTextIter iter;
+    gtk_text_buffer_get_end_iter(log_buf, &iter);
+    gtk_text_buffer_insert(log_buf, &iter, buffer, -1);
+}
+
+static void get_my_addr()
+{
+    int fd;
+    struct ifreq ifr;
+
+    fd = socket(AF_INET, SOCK_DGRAM, 0);
+
+    ifr.ifr_addr.sa_family = AF_INET;
+
+    strncpy(ifr.ifr_name, "wlan0", IFNAMSIZ-1);
+
+    ioctl(fd, SIOCGIFADDR, &ifr);
+
+    s_my_ipaddr = inet_ntoa(((struct sockaddr_in *)&ifr.ifr_addr)->sin_addr);
+    d_my_ipaddr = inet_network(s_my_ipaddr);
+
+    BASE_LOG("My IP Address:");
+    BASE_LOG(s_my_ipaddr);
+    
+    close(fd);
+}
 
 static void create_layout()
 {
@@ -45,7 +80,7 @@ static void create_layout()
     text_view = gtk_text_view_new ();
     gtk_text_view_set_editable(GTK_TEXT_VIEW(text_view), FALSE);
     log_buf = gtk_text_view_get_buffer (GTK_TEXT_VIEW (text_view));
-    gtk_text_buffer_set_text (log_buf, "Your 1st GtkTextView widget!", -1);
+    gtk_text_buffer_set_text (log_buf, "Welcome to hamster base!\n", -1);
     scrolled_win = gtk_scrolled_window_new (NULL, NULL);
     gtk_container_add (GTK_CONTAINER (scrolled_win), text_view);
     
@@ -115,55 +150,85 @@ static void socket_connect()
 
 gpointer multicast_guard()
 {
-#if 0
-    int s_fd, c_fd;
-    struct sockaddr_in c_addr, s_addr;
+    struct sockaddr_in remote_addr;
+    struct in_addr ia;
+    int sockfd;
+    unsigned char rcv_buf[BUFLEN];
+    unsigned char snd_buf[BUFLEN];
+    unsigned int socklen, n;
+    struct hostent *m_group;
+    struct ip_mreq m_req;
+    struct s_com *rcv_msg, *snd_msg;
+    struct s_mc_ipaddr *payload;
     
-    s_fd = socket(PF_INET, SOCK_DGRAM, 0);
-    
-    if(s_fd < 0)
+    sockfd = socket(AF_INET, SOCK_DGRAM, 0);
+    if (sockfd < 0) 
     {
-        printf("Socket failed\n");
+        BASE_LOG("socket creating err in udptalk\n");
         return NULL;
+    }
+    
+    memset(&m_req, 0, sizeof(struct ip_mreq));
+    if ((m_group = gethostbyname(MUL_IPADDR)) == NULL) 
+    {
+        return NULL;
+    }
+    
+    memcpy((void *)m_group->h_addr, &ia, m_group->h_length);
+    memcpy(&ia, &m_req.imr_multiaddr.s_addr, sizeof(struct in_addr));
+    
+    m_req.imr_interface.s_addr = htonl(INADDR_ANY);
+    
+    if (setsockopt(sockfd, IPPROTO_IP, IP_ADD_MEMBERSHIP, &m_req,sizeof(struct ip_mreq)) == -1) 
+    {
+        BASE_LOG("setsockopt");
+        return NULL;
+    }
+    
+    socklen = sizeof(struct sockaddr_in);
+    memset(&remote_addr, 0, socklen);
+    remote_addr.sin_family = AF_INET;
+    remote_addr.sin_port = htons(BASE_PORT);
+
+    if (inet_pton(AF_INET, MUL_IPADDR, &remote_addr.sin_addr) <= 0) 
+    {
+        BASE_LOG("Wrong dest IP address!\n");
+        exit(0);
+    }
+    
+    if (bind(sockfd, (struct sockaddr *) &remote_addr,sizeof(struct sockaddr_in)) == -1) 
+    {
+        BASE_LOG("Bind error\n");
+        exit(0);
+    }
+    
+    for(;;) 
+    {
+        n = recvfrom(sockfd, rcv_buf, BUFLEN, 0, (struct sockaddr *) &remote_addr, &socklen);
+        if (n != sizeof(struct s_com)) {
+            continue;
+        } 
+        else 
+        {
+            memset(snd_buf, 0, sizeof(snd_buf));
+            snd_msg = (struct s_com *)snd_buf;
+            rcv_msg = (struct s_com *)rcv_buf;
+            switch(rcv_msg->code)
+            {
+                case HA_REQUEST_BASE:
+                {
+                    snd_msg->code = BA_MC_IPADDR;
+                    snd_msg->len = sizeof(struct s_mc_ipaddr);
+                    payload = (struct s_mc_ipaddr *)(snd_msg + sizeof(struct s_com));
+                    payload->ipaddr = htonl(d_my_ipaddr);
+                    n = sendto(sockfd, snd_buf, sizeof(snd_buf), 0, (struct sockaddr *) &remote_addr, sizeof(struct sockaddr));
+                    continue;
+                }
+            }
+        }
+        sleep(10);
     }
 
-    unsigned char share = 1; // we will need to pass the address of this value
-    if (setsockopt(s_fd, SOL_SOCKET, SO_REUSEADDR, &share, sizeof(share)) < 0) 
-    {
-        printf("setsockopt(allow multiple socket use");
-        return NULL;
-    }
-    
-    memset((void *)&s_addr, 0, sizeof(s_addr));
-    s_addr.sin_family = AF_INET;
-    s_addr.sin_addr.s_addr = inet_addr("224.0.0.1");
-    s_addr.sin_port = htons(BASE_PORT);
-    
-    if(bind(s_fd, (struct sockaddr *)&s_addr, sizeof(s_addr)) < 0)
-    {
-        printf("Bind failed\n");
-        return NULL;
-    }
-
-    if (setsockopt(s_fd, IPPROTO_IP, IP_MULTICAST_LOOP, &share, sizeof(share)) < 0) 
-    {
-        printf("setsockopt(multicast loop on)");
-        return NULL;
-    }
-
-    command.imr_multiaddr.s_addr = inet_addr("224.0.0.1");
-    command.imr_interface.s_addr = htonl(INADDR_ANY);
-    if (command.imr_multiaddr.s_addr == -1) {
-        printf("Error: group of 224.0.0.1 not a legal multicast address\n");
-        return NULL;
-    }
-
-    if (setsockopt(s_fd, IPPROTO_IP, IP_ADD_MEMBERSHIP, &command, sizeof(command)) < 0) 
-    {
-        printf("Error in setsocket(add membership)");
-        return NULL;
-    }
-#endif
     return NULL;
 }
 
@@ -179,6 +244,8 @@ int main(int argc, char* argv[])
     
     create_layout();
     
+    get_my_addr();
+
     gtk_main ();
     gdk_threads_leave ();
     return 0;

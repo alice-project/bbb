@@ -5,6 +5,7 @@ CC = $(CROSS_COMPILE)gcc
 CFLAGS = -O -g2 -DDEBUG -DGPIO_USING_DTS
 LDLIBS = -lrt -lpthread 
 LDFLAGS =
+INC = -I ../pub/
 LN = $(CC)
 RM = rm -f
 MV = mv
@@ -20,7 +21,7 @@ robot: $(OBJS)
 	$(LN) $(LDFLAGS) $(CFLAGS) -o robot $(OBJS) $(LDLIBS)
 
 $(OBJS): %.o: %.c
-	$(CC) -c $(CFLAGS) $< -o $@
+	$(CC) -c $(CFLAGS) $(INC) $< -o $@
 
 .PHONY: clean
 clean:

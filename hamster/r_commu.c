@@ -3,11 +3,124 @@
 #include <string.h>
 #include <sys/types.h>
 #include <sys/socket.h>
+#include <sys/ioctl.h>
 #include <netinet/in.h>
-#include <netdb.h>
+#include <arpa/inet.h>
+#include <net/if.h>
 #include <pthread.h>
+#include <netdb.h>
 
+#include "pub.h"
 #include "r_commu.h"
+
+#define MY_NAME "HAMSTER_001"
+
+char         *s_my_ipaddr;
+unsigned int d_my_ipaddr;
+unsigned int d_base_ipaddr;
+
+static void get_my_addr()
+{
+    int fd;
+    struct ifreq ifr;
+
+    fd = socket(AF_INET, SOCK_DGRAM, 0);
+
+    ifr.ifr_addr.sa_family = AF_INET;
+
+    strncpy(ifr.ifr_name, "wlan0", IFNAMSIZ-1);
+
+    ioctl(fd, SIOCGIFADDR, &ifr);
+
+    s_my_ipaddr = inet_ntoa(((struct sockaddr_in *)&ifr.ifr_addr)->sin_addr);
+    d_my_ipaddr = inet_network(s_my_ipaddr);
+
+    close(fd);
+}
+
+static int wait_for_baseaddr()
+{
+    struct sockaddr_in remote_addr, local_addr;
+    
+    int sockfd;
+    char rcv_buf[BUFLEN];
+    char snd_buf[BUFLEN];
+    unsigned int socklen, n;
+    struct s_com *rcv_msg, *snd_msg;
+    struct s_request_base *snd_payload;
+    struct s_mc_ipaddr    *rcv_payload;
+    
+    sockfd = socket(AF_INET, SOCK_DGRAM, 0);
+    if ((sockfd = socket(AF_INET, SOCK_DGRAM, 0)) < 0) 
+    {
+        printf("socket creating error\n");
+        sleep(10);
+    }
+    socklen = sizeof(struct sockaddr_in);
+    
+    memset(&remote_addr, 0, socklen);
+    remote_addr.sin_family = AF_INET;
+    remote_addr.sin_port = htons(BASE_PORT);
+
+    while (inet_pton(AF_INET, MUL_IPADDR, &remote_addr.sin_addr) <= 0) 
+    {
+        printf("wrong group address!\n");
+        sleep(10);
+    }
+    
+    memset(&local_addr, 0, socklen);
+    local_addr.sin_family = AF_INET;
+    local_addr.sin_port = htons(23456);
+    
+    while (inet_pton(AF_INET, s_my_ipaddr, &local_addr.sin_addr) <= 0) 
+    {
+        printf("self ip address error!\n");
+        sleep(10);
+    }
+    
+    while (bind(sockfd, (struct sockaddr *) &local_addr,sizeof(struct sockaddr_in)) == -1) 
+    {
+        printf("Bind error\n");
+        sleep(10);
+    }
+    
+    bzero(snd_buf, BUFLEN);
+    rcv_msg = (struct s_com *)snd_buf;
+    rcv_msg->code = HA_REQUEST_BASE;
+    snd_payload = (struct s_request_base *)(snd_buf + sizeof(struct s_com));
+    memcpy(snd_payload->name, MY_NAME, sizeof(MY_NAME));
+    while (sendto(sockfd, snd_buf, sizeof(snd_buf), 0,(struct sockaddr *) &remote_addr,sizeof(struct sockaddr_in)) < 0) 
+    {
+        printf("sendto error!\n");
+        sleep(10);
+    }
+
+    for (;;) 
+    {
+        bzero(rcv_buf, BUFLEN);
+        n = recvfrom(sockfd, rcv_buf, BUFLEN, 0, (struct sockaddr *) &remote_addr, &socklen);
+        if (n != sizeof(struct s_com)) {
+            sleep(10);
+            continue;
+        } 
+
+        rcv_msg = (struct s_com *)rcv_buf;
+        switch(rcv_msg->code)
+        {
+            case BA_MC_IPADDR:
+            {
+                snd_msg->code = BA_MC_IPADDR;
+                snd_msg->len = sizeof(struct s_mc_ipaddr);
+                rcv_payload = (struct s_mc_ipaddr *)(snd_msg + sizeof(struct s_com));
+                d_base_ipaddr =  htonl(rcv_payload->ipaddr);
+                close(sockfd);
+                return 0;
+            }
+        }
+    }
+
+    return 0;
+}
 
 char buffer[1500];
 void *commu_thread(void *data)
@@ -24,13 +137,10 @@ void *commu_thread(void *data)
         return NULL;
     }
     
-    server_host_name = gethostbyname("10.44.124.127");
-    
     memset((void *)&m_addr, 0, sizeof(m_addr));
     m_addr.sin_family = AF_INET;
-    m_addr.sin_addr.s_addr = htonl(INADDR_ANY);
-    m_addr.sin_addr.s_addr = ((struct in_addr *)(server_host_name->h_addr))->s_addr;
-    m_addr.sin_port = htons(8888);
+    m_addr.sin_addr.s_addr = htonl(d_base_ipaddr);
+    m_addr.sin_port = htons(BASE_PORT);
     
     while(connect(m_fd, (void *)&m_addr, sizeof(m_addr)) < 0)
     {
