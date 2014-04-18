@@ -28,7 +28,7 @@ static void get_my_addr()
 
     ifr.ifr_addr.sa_family = AF_INET;
 
-    strncpy(ifr.ifr_name, "wlan0", IFNAMSIZ-1);
+    strncpy(ifr.ifr_name, "usb0", IFNAMSIZ-1);
 
     ioctl(fd, SIOCGIFADDR, &ifr);
 
@@ -38,7 +38,7 @@ static void get_my_addr()
     close(fd);
 }
 
-static int wait_for_baseaddr()
+static int wait_for_base()
 {
     struct sockaddr_in remote_addr, local_addr;
     
@@ -49,15 +49,16 @@ static int wait_for_baseaddr()
     struct s_com *rcv_msg, *snd_msg;
     struct s_request_base *snd_payload;
     struct s_mc_ipaddr    *rcv_payload;
-    
-    sockfd = socket(AF_INET, SOCK_DGRAM, 0);
+
+    get_my_addr();    
+
     if ((sockfd = socket(AF_INET, SOCK_DGRAM, 0)) < 0) 
     {
         printf("socket creating error\n");
         sleep(10);
     }
     socklen = sizeof(struct sockaddr_in);
-    
+
     memset(&remote_addr, 0, socklen);
     remote_addr.sin_family = AF_INET;
     remote_addr.sin_port = htons(BASE_PORT);
@@ -77,6 +78,7 @@ static int wait_for_baseaddr()
         printf("self ip address error!\n");
         sleep(10);
     }
+printf("%s\n", s_my_ipaddr);
     
     while (bind(sockfd, (struct sockaddr *) &local_addr,sizeof(struct sockaddr_in)) == -1) 
     {
@@ -89,9 +91,10 @@ static int wait_for_baseaddr()
     rcv_msg->code = HA_REQUEST_BASE;
     snd_payload = (struct s_request_base *)(snd_buf + sizeof(struct s_com));
     memcpy(snd_payload->name, MY_NAME, sizeof(MY_NAME));
-    while (sendto(sockfd, snd_buf, sizeof(snd_buf), 0,(struct sockaddr *) &remote_addr,sizeof(struct sockaddr_in)) < 0) 
+
+    while (sendto(sockfd, snd_buf, sizeof(snd_buf), 0, (struct sockaddr *) &remote_addr, sizeof(struct sockaddr_in)) < 0) 
     {
-        printf("sendto error!\n");
+        perror("sendto error");
         sleep(10);
     }
 
@@ -99,23 +102,23 @@ static int wait_for_baseaddr()
     {
         bzero(rcv_buf, BUFLEN);
         n = recvfrom(sockfd, rcv_buf, BUFLEN, 0, (struct sockaddr *) &remote_addr, &socklen);
-        if (n != sizeof(struct s_com)) {
+        if (n < sizeof(struct s_com)) {
             sleep(10);
             continue;
-        } 
+        }
 
         rcv_msg = (struct s_com *)rcv_buf;
         switch(rcv_msg->code)
         {
             case BA_MC_IPADDR:
             {
-                snd_msg->code = BA_MC_IPADDR;
-                snd_msg->len = sizeof(struct s_mc_ipaddr);
-                rcv_payload = (struct s_mc_ipaddr *)(snd_msg + sizeof(struct s_com));
+                rcv_payload = (struct s_mc_ipaddr *)(rcv_msg + sizeof(struct s_com));
                 d_base_ipaddr =  htonl(rcv_payload->ipaddr);
                 close(sockfd);
                 return 0;
             }
+            default:
+                break;
         }
     }
 
@@ -123,11 +126,17 @@ static int wait_for_baseaddr()
 }
 
 char buffer[1500];
-void *commu_thread(void *data)
+void *communation(void *data)
 {
     int m_fd;
     struct sockaddr_in m_addr;
     struct hostent *server_host_name;
+
+    if(wait_for_base() < 0)
+    {
+        printf("BASE not responsed!\n");
+        return NULL;
+    }
 
     m_fd = socket(PF_INET, SOCK_STREAM, 0);
     

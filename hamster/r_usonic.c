@@ -6,7 +6,7 @@
 #include "gpio.h"
 #include "r_usonic.h"
 
-#define MAX_USONIC_DETECT_TM  0xffff0
+#define MAX_USONIC_DETECT_TM  0x1ffff0
 
 static int usonic_state[MAX_USONIC];
 static struct timeval tm_start[MAX_USONIC];
@@ -14,7 +14,7 @@ int distance[MAX_USONIC];
 
 const int usonic_pin[MAX_USONIC][4] = {
     /* connector, trigger, conector, echo */
-    {8, 11, 9, 15},
+    {8, 11, 9, 21},
     {9, 17, 9, 18},
     {9, 22, 9, 23},
     {9, 24, 9, 25},
@@ -37,8 +37,8 @@ void start_usonic_detect(int i)
   #ifdef DEBUG
     printf("start detecting ......\n");
   #endif
-    set_pin_high(usonic_pin[i][0], usonic_pin[i][1]);
     gettimeofday(&tm_start[i], NULL);
+    set_pin_high(usonic_pin[i][0], usonic_pin[i][1]);
     usonic_state[i] = USONIC_BUSY;
 }
 
@@ -74,7 +74,7 @@ gpio_print_mode(usonic_pin[i][2], usonic_pin[i][3]);
 //        for(i = 0;i < MAX_USONIC;i++)
         {
             gettimeofday(&tm_current, NULL);
-            ms_diff = (tm_current.tv_sec - tm_start[i].tv_sec) * 1000 + tm_current.tv_usec - tm_start[i].tv_usec;
+            ms_diff = (tm_current.tv_sec - tm_start[i].tv_sec) * 1000000 + tm_current.tv_usec - tm_start[i].tv_usec;
             if(usonic_state[i] == USONIC_BUSY)
             {
                 /* BUSY state SHOULD NOT BE trigger low */
@@ -82,16 +82,16 @@ gpio_print_mode(usonic_pin[i][2], usonic_pin[i][3]);
                 {
                     printf("state ERROR\n");
                     stop_usonic_detect(i);
-printf("DIR=%d\n", gpio_get_dir(usonic_pin[i][0], usonic_pin[i][1]));
-gpio_print_mode(usonic_pin[i][0], usonic_pin[i][1]);
                     continue;
                 }
 
                 if(ms_diff > MAX_USONIC_DETECT_TM)
                 {
+printf("tm_current.tv_sec=%d:%d\n", tm_current.tv_sec, tm_current.tv_usec);
+printf("tm_start[i].tv_sec=%d:%d\n", tm_start[i].tv_sec,tm_start[i].tv_usec);
+printf("ms_diff=%d\n", ms_diff);
+
                     printf("DISTANCE is too far!\n");
-printf("DIR=%d\n", gpio_get_dir(usonic_pin[i][2], usonic_pin[i][3]));
-gpio_print_mode(usonic_pin[i][2], usonic_pin[i][3]);
                     stop_usonic_detect(i);
                     continue;
                 }
@@ -101,11 +101,11 @@ gpio_print_mode(usonic_pin[i][2], usonic_pin[i][3]);
                 {
                     distance[i] = ms_diff/1700;  /* disance in CM */
                     printf("DISTANCE[%d] is %d, tm i %d\n", i, distance[i], ms_diff);
-printf("DIR=%d\n", gpio_get_dir(usonic_pin[i][2], usonic_pin[i][3]));
-gpio_print_mode(usonic_pin[i][2], usonic_pin[i][3]);
                     stop_usonic_detect(i);
                     continue;
                 }
+if(is_pin_low(usonic_pin[i][0], usonic_pin[i][1]))
+printf("eeee\n");
             }
             else
             {
@@ -120,7 +120,7 @@ gpio_print_mode(usonic_pin[i][2], usonic_pin[i][3]);
                 start_usonic_detect(i);
             }
         }
-        usleep(10);
+        //usleep(1);
     }
 #endif
     return NULL;

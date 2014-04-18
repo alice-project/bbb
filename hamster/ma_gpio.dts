@@ -27,7 +27,7 @@
 			pinctrl-single,pins = <
 
 				0x034 0x37  /* P8_11 gpio1[13] 45 OUTPUT MODE7          - sonic trigger */
-				0x040 0x07  /* P9_15 gpio1[12] 44 INPUT  MODE7 pulldown - sonic echo    */
+				0x040 0x27  /* P9_15 gpio1[12] 44 INPUT  MODE7 pulldown - sonic echo    */
                        
                                /* OUTPUT  GPIO(mode7) 0x07 pulldown, 0x17 pullup, 0x?f no pullup/down */
 			                   /* INPUT   GPIO(mode7) 0x27 pulldown, 0x37 pullup, 0x?f no pullup/down */

@@ -21,8 +21,8 @@ enum {
 };
 
 enum {
-    DIR_IN = 0,
-    DIR_OUT,
+    DIR_OUT = 0,
+    DIR_IN,
 };
 
 #define CONTROL_MODULE 0x44e10000

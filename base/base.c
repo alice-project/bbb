@@ -43,7 +43,7 @@ static void get_my_addr()
 
     ifr.ifr_addr.sa_family = AF_INET;
 
-    strncpy(ifr.ifr_name, "wlan0", IFNAMSIZ-1);
+    strncpy(ifr.ifr_name, "eth1", IFNAMSIZ-1);
 
     ioctl(fd, SIOCGIFADDR, &ifr);
 
@@ -52,6 +52,7 @@ static void get_my_addr()
 
     BASE_LOG("My IP Address:");
     BASE_LOG(s_my_ipaddr);
+    BASE_LOG("\n");
     
     close(fd);
 }
@@ -142,12 +143,6 @@ GtkWidget* create_toolbar()
     return (toolbar);
 }
 
-static void socket_connect()
-{
-    GThread *comm;
-    comm = g_thread_create(start_watching, NULL, TRUE, NULL);
-}
-
 gpointer multicast_guard()
 {
     struct sockaddr_in remote_addr;
@@ -157,7 +152,7 @@ gpointer multicast_guard()
     unsigned char snd_buf[BUFLEN];
     unsigned int socklen, n;
     struct hostent *m_group;
-    struct ip_mreq m_req;
+    struct ip_mreqn m_req;
     struct s_com *rcv_msg, *snd_msg;
     struct s_mc_ipaddr *payload;
     
@@ -168,20 +163,21 @@ gpointer multicast_guard()
         return NULL;
     }
     
-    memset(&m_req, 0, sizeof(struct ip_mreq));
+    memset(&m_req, 0, sizeof(struct ip_mreqn));
     if ((m_group = gethostbyname(MUL_IPADDR)) == NULL) 
     {
+        BASE_LOG("gethostbyname\n");
         return NULL;
     }
     
-    memcpy((void *)m_group->h_addr, &ia, m_group->h_length);
-    memcpy(&ia, &m_req.imr_multiaddr.s_addr, sizeof(struct in_addr));
+    bcopy((void *)m_group->h_addr, &ia, m_group->h_length);
+    bcopy(&ia, &m_req.imr_multiaddr.s_addr, sizeof(struct in_addr));
     
-    m_req.imr_interface.s_addr = htonl(INADDR_ANY);
+    m_req.imr_address.s_addr = htonl(INADDR_ANY);
     
-    if (setsockopt(sockfd, IPPROTO_IP, IP_ADD_MEMBERSHIP, &m_req,sizeof(struct ip_mreq)) == -1) 
+    if (setsockopt(sockfd, IPPROTO_IP, IP_ADD_MEMBERSHIP, &m_req, sizeof(struct ip_mreqn)) == -1) 
     {
-        BASE_LOG("setsockopt");
+        BASE_LOG("setsockopt\n");
         return NULL;
     }
     
@@ -193,26 +189,29 @@ gpointer multicast_guard()
     if (inet_pton(AF_INET, MUL_IPADDR, &remote_addr.sin_addr) <= 0) 
     {
         BASE_LOG("Wrong dest IP address!\n");
-        exit(0);
+        return NULL;
     }
     
     if (bind(sockfd, (struct sockaddr *) &remote_addr,sizeof(struct sockaddr_in)) == -1) 
     {
         BASE_LOG("Bind error\n");
-        exit(0);
+        return NULL;
     }
     
+    BASE_LOG("BASE is ready!\n");
     for(;;) 
     {
         n = recvfrom(sockfd, rcv_buf, BUFLEN, 0, (struct sockaddr *) &remote_addr, &socklen);
-        if (n != sizeof(struct s_com)) {
+        if (n < sizeof(struct s_com)) {
             continue;
         } 
         else 
         {
+            BASE_LOG("NEW ANT IS COMMING\n");
             memset(snd_buf, 0, sizeof(snd_buf));
             snd_msg = (struct s_com *)snd_buf;
             rcv_msg = (struct s_com *)rcv_buf;
+
             switch(rcv_msg->code)
             {
                 case HA_REQUEST_BASE:
@@ -221,15 +220,25 @@ gpointer multicast_guard()
                     snd_msg->len = sizeof(struct s_mc_ipaddr);
                     payload = (struct s_mc_ipaddr *)(snd_msg + sizeof(struct s_com));
                     payload->ipaddr = htonl(d_my_ipaddr);
-                    n = sendto(sockfd, snd_buf, sizeof(snd_buf), 0, (struct sockaddr *) &remote_addr, sizeof(struct sockaddr));
-                    continue;
+                    n = sendto(sockfd, snd_buf, sizeof(snd_buf), 0, (struct sockaddr *) &remote_addr, sizeof(struct sockaddr_in));
+
+                    break;
                 }
+                default:
+                    break;
             }
         }
         sleep(10);
     }
 
     return NULL;
+}
+
+static void socket_connect()
+{
+    GThread *comm, *mc_thread;
+    comm = g_thread_create(start_watching, NULL, TRUE, NULL);
+    mc_thread = g_thread_create(multicast_guard, NULL, TRUE, NULL);
 }
 
 int main(int argc, char* argv[])

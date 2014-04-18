@@ -7,6 +7,8 @@
 #include <netdb.h>
 #include <errno.h>
 
+#include "../pub/pub.h"
+
 #define BUFLEN 255
 int main(int argc, char **argv)
 {
@@ -16,7 +18,7 @@ int main(int argc, char **argv)
     char recmsg[BUFLEN + 1];
     unsigned int socklen, n;
     struct hostent *group;
-    struct ip_mreq mreq;
+    struct ip_mreqn mreq;
     
     sockfd = socket(AF_INET, SOCK_DGRAM, 0);
     if (sockfd < 0) {
@@ -24,23 +26,18 @@ int main(int argc, char **argv)
         exit(1);
     }
     
-    bzero(&mreq, sizeof(struct ip_mreq));
-    if (argv[1]) {
-        if ((group = gethostbyname(argv[1])) == (struct hostent *) 0) {
+    bzero(&mreq, sizeof(struct ip_mreqn));
+        if ((group = gethostbyname(MUL_IPADDR)) == (struct hostent *) 0) {
             perror("gethostbyname");
             exit(errno);
         }
-    } else {
-        printf("you should give me a group address, 224.0.0.0-239.255.255.255\n");
-        exit(errno);
-    }
     
     bcopy((void *) group->h_addr, (void *) &ia, group->h_length);
     bcopy(&ia, &mreq.imr_multiaddr.s_addr, sizeof(struct in_addr));
     
-    mreq.imr_interface.s_addr = htonl(INADDR_ANY);
+    mreq.imr_address.s_addr = htonl(INADDR_ANY);
     
-    if (setsockopt(sockfd, IPPROTO_IP, IP_ADD_MEMBERSHIP, &mreq,sizeof(struct ip_mreq)) == -1) {
+    if (setsockopt(sockfd, IPPROTO_IP, IP_ADD_MEMBERSHIP, &mreq, sizeof(struct ip_mreqn)) == -1) {
         perror("setsockopt");
         exit(-1);
     }
@@ -48,19 +45,12 @@ int main(int argc, char **argv)
     socklen = sizeof(struct sockaddr_in);
     memset(&peeraddr, 0, socklen);
     peeraddr.sin_family = AF_INET;
-    if (argv[2])
-        peeraddr.sin_port = htons(atoi(argv[2]));
-    else
-        peeraddr.sin_port = htons(7838);
-    if (argv[1]) {
-        if (inet_pton(AF_INET, argv[1], &peeraddr.sin_addr) <= 0) {
+        peeraddr.sin_port = htons(BASE_PORT);
+
+        if (inet_pton(AF_INET, MUL_IPADDR, &peeraddr.sin_addr) <= 0) {
             printf("Wrong dest IP address!\n");
             exit(0);
         }
-    } else {
-        printf("no group address given, 224.0.0.0-239.255.255.255\n");
-        exit(errno);
-    }
     
     if (bind(sockfd, (struct sockaddr *) &peeraddr,sizeof(struct sockaddr_in)) == -1) {
         printf("Bind error\n");

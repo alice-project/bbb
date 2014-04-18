@@ -245,7 +245,14 @@ int gpio_get_dir(int connector, int pin)
 
     value = *(unsigned int *)(gpio_addr[gpio_bank[port]] + GPIO_OE_OFFSET);
 
-    return (value >> gpio_bitfield[port]) & 0x1 ;
+    if((value & gpio_bitfield[port]) == 0)
+    {
+        return DIR_OUT;
+    }
+    else
+    {
+        return DIR_IN;
+    }
 }
 
 int set_pin_high(int connector, int pin)
@@ -293,6 +300,7 @@ static print_all_mode()
         {
             printf("%p: 0x%x,%s\n", (ctrl_addr + gpio_mode_offset[i]), *(unsigned int *)(ctrl_addr + gpio_mode_offset[i]), gpio_name[i][*(unsigned int *)(ctrl_addr + gpio_mode_offset[i]) & 0x7]);
         }
+
     }
 }
 
@@ -379,7 +387,7 @@ int gpio_init()
     }
 */
 
-    print_all_dir();
+//    print_all_dir();
 
     for(i = 0;i < sizeof(gpio_used)/sizeof(gpio_used[0]);i++)
     {
@@ -389,7 +397,7 @@ int gpio_init()
         gpio_set_dir(gpio_used[i][1], gpio_used[i][2], gpio_used[i][3]);
     }
 
-    print_all_dir();
+//    print_all_mode();
 
 }
 
