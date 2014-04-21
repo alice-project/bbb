@@ -9,13 +9,15 @@
 #include <gtk/gtk.h>
 #include <gdk/gdkkeysyms.h>
 
-#define MAX_HAMTERS 16
+#include "pub.h"
+#include "common.h"
 
 extern unsigned int d_my_ipaddr;
 
 GSList *g_watchers = NULL;
-pthread_t hamter_thread[MAX_HAMTERS] = {0};
-static int g_hamter_id = 0;
+pthread_t hm_thread[MAX_HAMTERS] = {0};
+int g_hm_id = 0;
+struct s_hm g_hms[MAX_HAMTERS] = {-1};
 
 static gboolean ant_comes(GSocketService    *service,
                           GSocketConnection *connection,
@@ -41,9 +43,8 @@ static gboolean ant_comes(GSocketService    *service,
     return TRUE;
 }
 
-#define BASE_PORT  8888
 char buffer[1500];
-void *hamter_func(void *data)
+void *hm_func(void *data)
 {
     int fd = *(int *)data;
     int n, num;
@@ -52,7 +53,7 @@ void *hamter_func(void *data)
         printf("FD Error\n");
         return;
     }
-    printf("NEW HAMTER %d is comming...\n", fd);
+    printf("NEW hm %d is comming...\n", fd);
 
     while((num = recv(fd, (void *)buffer, 1500, MSG_WAITALL)) <= 0);
     printf("Packet Received!\n");
@@ -64,15 +65,15 @@ void *hamter_func(void *data)
 
     close(fd);
     pthread_exit(NULL);
-    g_hamter_id--;
+    g_hm_id--;
     return;
 }
 
 gpointer start_watching()
 {
-    int s_fd, c_fd;
+    int s_fd;
     int i;
-    struct sockaddr_in c_addr, s_addr;
+    struct sockaddr_in s_addr;
     
     s_fd = socket(PF_INET, SOCK_STREAM, 0);
     
@@ -80,6 +81,11 @@ gpointer start_watching()
     {
         printf("Socket failed\n");
         return NULL;
+    }
+
+    for(i=0;i<MAX_HAMTERS;i++)
+    {
+        g_hms[i].fd = -1;
     }
     
     memset((void *)&s_addr, 0, sizeof(s_addr));
@@ -101,28 +107,29 @@ gpointer start_watching()
     
     for(;;)
     {
-        memset(&c_addr, 0, sizeof(c_addr));
-        socklen_t len = sizeof(c_addr);
-        c_fd = accept(s_fd, (struct sockaddr *)&c_addr, &len);
-        if(c_fd < 0)
+        memset(&g_hms[g_hm_id].c_addr, 0, sizeof(g_hms[g_hm_id].c_addr));
+        socklen_t len = sizeof(g_hms[g_hm_id].c_addr);
+        g_hms[g_hm_id].fd = accept(s_fd, (struct sockaddr *)&g_hms[g_hm_id].c_addr, &len);
+        if(g_hms[g_hm_id].fd < 0)
         {
             printf("Accept failed\n");
         }
         else
         {
-            if(pthread_create(&hamter_thread[g_hamter_id], NULL, hamter_func, &c_fd) <0)
+            if(pthread_create(&hm_thread[g_hm_id], NULL, hm_func, &g_hms[g_hm_id].fd) < 0)
             {
                 printf("pthread_create failed\n");
-                close(c_fd);
+                close(g_hms[g_hm_id].fd);
+                g_hms[g_hm_id].fd = -1;
                 close(s_fd);
                 return NULL;
             }
-	        g_hamter_id++;
+	        g_hm_id++;
         }
     }
     
-    for(i=0;i<g_hamter_id;i++)
-        pthread_join(hamter_thread[i], 0);
+    for(i=0;i<g_hm_id;i++)
+        pthread_join(hm_thread[i], 0);
 
     close(s_fd);
     

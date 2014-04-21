@@ -14,8 +14,12 @@
 #include <gdk/gdkkeysyms.h>
 
 #include "pub.h"
+#include "common.h"
 #include "map.h"
 #include "watcher.h"
+
+extern int g_hm_id;
+extern struct s_hm g_hms[MAX_HAMTERS];
 
 char         *s_my_ipaddr;
 unsigned int d_my_ipaddr;
@@ -23,6 +27,7 @@ unsigned int d_my_ipaddr;
 GtkTextBuffer *log_buf;
 
 static void socket_connect();
+static void send_commands();
 
 GtkWidget* create_toolbar();
 static void create_layout();
@@ -108,7 +113,7 @@ static void create_layout()
 GtkWidget* create_toolbar()
 {
     GtkWidget* toolbar;
-    GtkToolItem *cut_tb, *copy_tb, *paste_tb, *separator;
+    GtkToolItem *cmd_tb, *copy_tb, *paste_tb, *separator;
     GtkToolItem *exit_tb, *connect_tb, *disconnect_tb;
     GtkToolItem *hlp_tb;
     
@@ -118,7 +123,8 @@ GtkWidget* create_toolbar()
     disconnect_tb = gtk_tool_button_new_from_stock (GTK_STOCK_DISCONNECT);
     g_signal_connect(G_OBJECT(disconnect_tb), "clicked", G_CALLBACK(socket_connect), NULL); 
     gtk_widget_set_sensitive(GTK_WIDGET(disconnect_tb), FALSE);
-    cut_tb = gtk_tool_button_new_from_stock (GTK_STOCK_CUT);
+    cmd_tb = gtk_tool_button_new_from_stock (GTK_STOCK_MEDIA_PLAY);
+    g_signal_connect(G_OBJECT(cmd_tb), "clicked", G_CALLBACK(send_commands), NULL); 
     copy_tb = gtk_tool_button_new_from_stock (GTK_STOCK_COPY);
     paste_tb = gtk_tool_button_new_from_stock (GTK_STOCK_PASTE);
     hlp_tb = gtk_tool_button_new_from_stock (GTK_STOCK_HELP);
@@ -133,7 +139,7 @@ GtkWidget* create_toolbar()
     
     gtk_toolbar_insert (GTK_TOOLBAR(toolbar), connect_tb,      0);
     gtk_toolbar_insert (GTK_TOOLBAR(toolbar), disconnect_tb,  -1);
-    gtk_toolbar_insert (GTK_TOOLBAR(toolbar), cut_tb,         -1);
+    gtk_toolbar_insert (GTK_TOOLBAR(toolbar), cmd_tb,         -1);
     gtk_toolbar_insert (GTK_TOOLBAR(toolbar), copy_tb,        -1);
     gtk_toolbar_insert (GTK_TOOLBAR(toolbar), paste_tb,       -1);
     gtk_toolbar_insert (GTK_TOOLBAR(toolbar), separator,      -1);
@@ -214,7 +220,7 @@ gpointer multicast_guard()
 
             switch(rcv_msg->code)
             {
-                case HA_REQUEST_BASE:
+                case HM_REQUEST_BASE:
                 {
                     snd_msg->code = BA_MC_IPADDR;
                     snd_msg->len = sizeof(struct s_mc_ipaddr);
@@ -239,6 +245,33 @@ static void socket_connect()
     GThread *comm, *mc_thread;
     comm = g_thread_create(start_watching, NULL, TRUE, NULL);
     mc_thread = g_thread_create(multicast_guard, NULL, TRUE, NULL);
+}
+
+static void send_commands()
+{
+    int n;
+    char snd_buf[BUFLEN];
+    struct s_com *msg = (struct s_com *)snd_buf;
+
+    if(g_hm_id < 1)    
+    {
+        printf("invalid fd\n");
+        return;
+    }
+
+    if(g_hms[g_hm_id-1].fd < 0)
+    {
+        printf("invalid fd\n");
+        return;
+    }
+
+printf("sending to %d\n", g_hms[g_hm_id-1].fd);
+
+    memset(snd_buf, 0, sizeof(snd_buf));
+    msg->code = BA_INSTRUCT_MOVE;
+
+    n = sendto(g_hms[g_hm_id-1].fd, snd_buf, BUFLEN, 0, (struct sockaddr *) &g_hms[MAX_HAMTERS].c_addr, sizeof(struct sockaddr_in));
+
 }
 
 int main(int argc, char* argv[])
