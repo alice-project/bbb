@@ -1,5 +1,0 @@
-#!/bin/bash
-
-echo "Compiling the overlay from .dts to .dtbo"
-
-dtc -O dtb -o MA-GPIO-00A0.dtbo -b 0 -@ ma_gpio.dts
