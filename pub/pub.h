@@ -26,6 +26,9 @@ struct s_mc_ipaddr
 #define BASE_PORT   7878
 #define BUFLEN 256
 
+#define MANUAL_MODE 0
+#define AUTO_MODE   1
+
 enum {
     /* 0 ~ 127: hm to base */
     HM_REQUEST_BASE = 0,

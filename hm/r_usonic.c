@@ -62,13 +62,6 @@ void *usonic_sensor_scan(void *data)
     printf("usonic Scanning...\n");
   #endif
 
-i=0;
-printf("DIR=%d\n", gpio_get_dir(usonic_pin[i][0], usonic_pin[i][1]));
-gpio_print_mode(usonic_pin[i][0], usonic_pin[i][1]);
-printf("DIR=%d\n", gpio_get_dir(usonic_pin[i][2], usonic_pin[i][3]));
-gpio_print_mode(usonic_pin[i][2], usonic_pin[i][3]);
-
-#if 1
     for(;;)
     {
 //        for(i = 0;i < MAX_USONIC;i++)
@@ -87,9 +80,6 @@ gpio_print_mode(usonic_pin[i][2], usonic_pin[i][3]);
 
                 if(ms_diff > MAX_USONIC_DETECT_TM)
                 {
-printf("tm_current.tv_sec=%d:%d\n", tm_current.tv_sec, tm_current.tv_usec);
-printf("tm_start[i].tv_sec=%d:%d\n", tm_start[i].tv_sec,tm_start[i].tv_usec);
-printf("ms_diff=%d\n", ms_diff);
 
                     printf("DISTANCE is too far!\n");
                     stop_usonic_detect(i);
@@ -100,12 +90,10 @@ printf("ms_diff=%d\n", ms_diff);
                 if(is_pin_high(usonic_pin[i][2], usonic_pin[i][3]))
                 {
                     distance[i] = ms_diff/1700;  /* disance in CM */
-                    printf("DISTANCE[%d] is %d, tm i %d\n", i, distance[i], ms_diff);
+                    printf("DISTANCE[%d] is %d, tm i %ld\n", i, distance[i], ms_diff);
                     stop_usonic_detect(i);
                     continue;
                 }
-if(is_pin_low(usonic_pin[i][0], usonic_pin[i][1]))
-printf("eeee\n");
             }
             else
             {
@@ -122,7 +110,7 @@ printf("eeee\n");
         }
         //usleep(1);
     }
-#endif
+
     return NULL;
 }
 

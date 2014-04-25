@@ -31,5 +31,29 @@ struct s_base_info
     struct sockaddr_in m_addr;
 };
 
+struct s_hm_state
+{
+    unsigned int m_moving;
+    unsigned int m_control;
+    unsigned int m_camera;
+    unsigned int m_usonic0;
+    unsigned int m_usonic1;
+    unsigned int m_usonic2;
+    unsigned int m_usonic3;
+    unsigned int m_left_pwm;
+    unsigned int m_right_pwm;
+};
+
+struct s_hm_state_flag
+{
+    unsigned int moving_flag :1 ;
+    unsigned int control_flag:1;
+    unsigned int camera_flag :1;
+    unsigned int rsv         :29;
+};
+
+#define MY_NAME  "Hanma"
+
+
 #endif
 

@@ -35,8 +35,8 @@ static void create_layout();
 static inline void BASE_LOG(char *buffer)
 {
     GtkTextIter iter;
-    gtk_text_buffer_get_end_iter(log_buf, &iter);
-    gtk_text_buffer_insert(log_buf, &iter, buffer, -1);
+//    gtk_text_buffer_get_end_iter(log_buf, &iter);
+//    gtk_text_buffer_insert(log_buf, &iter, buffer, -1);
 }
 
 static void get_my_addr()
@@ -48,7 +48,7 @@ static void get_my_addr()
 
     ifr.ifr_addr.sa_family = AF_INET;
 
-    strncpy(ifr.ifr_name, "eth1", IFNAMSIZ-1);
+    strncpy(ifr.ifr_name, "lo", IFNAMSIZ-1);
 
     ioctl(fd, SIOCGIFADDR, &ifr);
 
@@ -92,7 +92,7 @@ static void create_layout()
     
     map = ants_map_new();
     gtk_widget_set_size_request(map, 600, 400);
-    gtk_paned_pack1(GTK_PANED (mid_pane), scrolled_win, TRUE, TRUE);
+    gtk_paned_pack1(GTK_PANED (mid_pane), scrolled_win, TRUE, FALSE);
     gtk_paned_pack2(GTK_PANED (mid_pane), map, TRUE, TRUE);
     
     gtk_box_pack_start (GTK_BOX (top_box), mid_pane, TRUE, TRUE, 0);
@@ -106,7 +106,7 @@ static void create_layout()
     gtk_container_add (GTK_CONTAINER (window), top_box);
     
     gtk_widget_show_all (window);
-    gdk_window_maximize(window->window);
+//    gdk_window_maximize(window->window);
 }
 
 
@@ -149,13 +149,14 @@ GtkWidget* create_toolbar()
     return (toolbar);
 }
 
+static unsigned char rcv_buf[BUFLEN];
+static unsigned char snd_buf[BUFLEN];
+static char hm_name[17];
 gpointer multicast_guard()
 {
     struct sockaddr_in remote_addr;
     struct in_addr ia;
     int sockfd;
-    unsigned char rcv_buf[BUFLEN];
-    unsigned char snd_buf[BUFLEN];
     unsigned int socklen, n;
     struct hostent *m_group;
     struct ip_mreqn m_req;
@@ -213,10 +214,11 @@ gpointer multicast_guard()
         } 
         else 
         {
-            BASE_LOG("NEW ANT IS COMMING\n");
+            BASE_LOG("NEW ANT IS COMMING: \n");
             memset(snd_buf, 0, sizeof(snd_buf));
             snd_msg = (struct s_com *)snd_buf;
             rcv_msg = (struct s_com *)rcv_buf;
+            memset(hm_name, 0, sizeof(hm_name));
 
             switch(rcv_msg->code)
             {
@@ -226,8 +228,19 @@ gpointer multicast_guard()
                     snd_msg->len = sizeof(struct s_mc_ipaddr);
                     payload = (struct s_mc_ipaddr *)(snd_msg + sizeof(struct s_com));
                     payload->ipaddr = htonl(d_my_ipaddr);
+                    memcpy(hm_name, rcv_buf+sizeof(struct s_com), sizeof(struct s_request_base));
+                    BASE_LOG("Requesting for BASE IP, HM name is \n");
+                    BASE_LOG(hm_name);
+                    BASE_LOG("\n");
+
+                    /* response with base IP */
                     n = sendto(sockfd, snd_buf, sizeof(snd_buf), 0, (struct sockaddr *) &remote_addr, sizeof(struct sockaddr_in));
 
+                    break;
+                }
+                case HM_REPORTING:
+                {
+                    printf("receiving reporting from hm\n");
                     break;
                 }
                 default:

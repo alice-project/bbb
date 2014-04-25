@@ -47,7 +47,9 @@ char buffer[1500];
 void *hm_func(void *data)
 {
     int fd = *(int *)data;
-    int n, num;
+    int n;
+    struct s_com *msg;
+
     if(fd < 0)
     {
         printf("FD Error\n");
@@ -55,13 +57,28 @@ void *hm_func(void *data)
     }
     printf("NEW hm %d is comming...\n", fd);
 
-    while((num = recv(fd, (void *)buffer, 1500, MSG_WAITALL)) <= 0);
-    printf("Packet Received!\n");
-    for(n=0;n<num;n++)
+    for(;;)
     {
-        printf("%c", buffer[n]);
+        if(fd < 0)
+            break;
+        
+        n = recv(fd, (void *)buffer, BUFLEN, MSG_WAITALL);
+        if (n < sizeof(struct s_com)) 
+        {
+            usleep(10);
+            continue;
+        }
+        msg = (struct s_com *)buffer;
+        switch(msg->code)
+        {
+            case HM_REPORTING:
+            {
+                printf("received HM_REPORTING message from (%d)\n", msg->id);
+                break;;
+            }
+        }
+        printf("Packet Received: %d!\n", n);
     }
-    printf("\n");
 
     close(fd);
     pthread_exit(NULL);

@@ -12,9 +12,13 @@
 
 #include "pub.h"
 #include "common.h"
+#include "gpio.h"
+#include "r_event.h"
+#include "r_message.h"
+#include "r_timer.h"
+#include "r_usonic.h"
+#include "r_led.h"
 #include "r_commu.h"
-
-#define MY_NAME "HAMSTER_001"
 
 char         *s_my_ipaddr;
 unsigned int d_my_ipaddr;
@@ -22,19 +26,18 @@ unsigned int d_base_ipaddr;
 
 struct s_base_info m_base;
 
-/* global */
-int m_fd = -1;
-
 static void get_my_addr()
 {
     int fd;
     struct ifreq ifr;
 
     fd = socket(AF_INET, SOCK_DGRAM, 0);
+    if(fd < 0)
+        return;
 
     ifr.ifr_addr.sa_family = AF_INET;
 
-    strncpy(ifr.ifr_name, "usb0", IFNAMSIZ-1);
+    strncpy(ifr.ifr_name, "lo", IFNAMSIZ-1);
 
     ioctl(fd, SIOCGIFADDR, &ifr);
 
@@ -85,7 +88,7 @@ static int wait_for_base()
         sleep(10);
     }
 
-    while (bind(sockfd, (struct sockaddr *) &local_addr,sizeof(struct sockaddr_in)) == -1) 
+    while (bind(sockfd, (struct sockaddr *) &local_addr, sizeof(struct sockaddr_in)) == -1) 
     {
         printf("Bind error\n");
         sleep(10);
@@ -106,8 +109,10 @@ static int wait_for_base()
     for (;;) 
     {
         bzero(rcv_buf, BUFLEN);
-        n = recvfrom(sockfd, rcv_buf, BUFLEN, 0, (struct sockaddr *) &remote_addr, &socklen);
+        n = recvfrom(sockfd, rcv_buf, BUFLEN, MSG_DONTWAIT, (struct sockaddr *) &remote_addr, &socklen);
         if (n < sizeof(struct s_com)) {
+            /* keep requesting unless received response from BASE */
+            sendto(sockfd, snd_buf, sizeof(snd_buf), 0, (struct sockaddr *) &remote_addr, sizeof(struct sockaddr_in));
             sleep(10);
             continue;
         }
@@ -130,7 +135,33 @@ static int wait_for_base()
     return 0;
 }
 
-void *communation(void *data)
+int regular_info(void *data)
+{
+    char *snd_buf;
+    struct s_com *msg;
+    int n;
+    
+    snd_buf = (char *)malloc(sizeof(char)*BUFLEN);
+    if(snd_buf == NULL)
+    {
+        return -1;
+    }
+    memset(snd_buf, 0, sizeof(char)*BUFLEN);
+    msg = (struct s_com *)snd_buf;
+    msg->ver = 0;
+    msg->code = HM_REPORTING;
+    msg->id = 0; /* temporary set */
+    msg->len = 0;
+    msg->flags = 0;
+    
+    n = sendto(m_base.fd, snd_buf, BUFLEN, 0, (struct sockaddr *) &m_base.m_addr, sizeof(struct sockaddr_in));
+printf("regular reporting to base: %d!\n", n);
+
+    free(snd_buf);
+    return 0;
+}
+
+void *commu_proc(void *data)
 {
     char rcv_buf[BUFLEN];
     struct hostent *server_host_name;
@@ -144,37 +175,45 @@ void *communation(void *data)
     }
     
     printf("received response from BASE!\n");
+    printf("BASE ip is 0x%x\n", d_base_ipaddr);
 
-    m_fd = socket(PF_INET, SOCK_STREAM, 0);
+    m_base.fd = socket(AF_INET, SOCK_STREAM, 0);
     
-    if(m_fd < 0)
+    if(m_base.fd < 0)
     {
         printf("Socket failed\n");
         return NULL;
     }
     
-    memset(&m_base, 0, sizeof(m_base));
+    memset(&m_base.m_addr, 0, sizeof(m_base.m_addr));
     m_base.m_addr.sin_family = AF_INET;
     m_base.m_addr.sin_addr.s_addr = htonl(d_base_ipaddr);
     m_base.m_addr.sin_port = htons(BASE_PORT);
     
-    while(connect(m_base.fd, (void *)&m_base.m_addr, sizeof(m_base.m_addr)) < 0)
+    while(connect(m_base.fd, (struct sockaddr *)&m_base.m_addr, sizeof(struct sockaddr_in)) < 0)
     {
+        perror("connect timeout!\n");
         sleep(10);
     }
-
-//    set_timer(0, R_TIMER_LOOP, 1000, led_blink, NULL);
+    printf("start timer\n");
+    set_timer(0, R_TIMER_LOOP, 10000, regular_info, NULL);
 
     for(;;)
     {    
-        n = recv(m_base.fd, (void *)rcv_buf, sizeof(struct s_com), MSG_WAITALL);
+        n = recv(m_base.fd, (void *)rcv_buf, BUFLEN, MSG_WAITALL);
         if (n < sizeof(struct s_com)) {
             sleep(10);
             continue;
         }
-        printf("Packet Received:");
         msg = (struct s_com *)rcv_buf;
-        printf("%d\n", msg->code);
+        switch(msg->code)
+        {
+            case BA_INSTRUCT_MOVE:
+            {
+                printf("received  BA_INSTRUCT_MOVE command from base\n");
+                break;
+            }
+        }
     }
     
     close(m_base.fd);

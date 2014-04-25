@@ -15,7 +15,7 @@ struct r_timer {
 	u_int32     msg_id;
 	u_int32     tm_type;
 	time_t      s_start;
-	useconds_t  ms_start;
+	suseconds_t  ms_start;
 	u_int32     tm_val;  /* in micro second */
 	timer_func  func;
 	void* data;
