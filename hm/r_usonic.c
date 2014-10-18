@@ -14,7 +14,7 @@ int distance[MAX_USONIC];
 
 const int usonic_pin[MAX_USONIC][4] = {
     /* connector, trigger, conector, echo */
-    {8, 11, 9, 21},
+    {8, 10, 8, 11},
     {9, 17, 9, 18},
     {9, 22, 9, 23},
     {9, 24, 9, 25},
@@ -64,6 +64,7 @@ void *usonic_sensor_scan(void *data)
 
     for(;;)
     {
+i = 0;
 //        for(i = 0;i < MAX_USONIC;i++)
         {
             gettimeofday(&tm_current, NULL);
@@ -108,7 +109,7 @@ void *usonic_sensor_scan(void *data)
                 start_usonic_detect(i);
             }
         }
-        //usleep(1);
+        usleep(1);
     }
 
     return NULL;

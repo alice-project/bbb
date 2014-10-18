@@ -17,6 +17,7 @@
 #include "r_message.h"
 #include "r_timer.h"
 #include "r_usonic.h"
+#include "r_motor.h"
 #include "r_led.h"
 #include "r_commu.h"
 
@@ -37,7 +38,7 @@ static void get_my_addr()
 
     ifr.ifr_addr.sa_family = AF_INET;
 
-    strncpy(ifr.ifr_name, "lo", IFNAMSIZ-1);
+    strncpy(ifr.ifr_name, "wlan0", IFNAMSIZ-1);
 
     ioctl(fd, SIOCGIFADDR, &ifr);
 
@@ -148,10 +149,8 @@ int regular_info(void *data)
     }
     memset(snd_buf, 0, sizeof(char)*BUFLEN);
     msg = (struct s_com *)snd_buf;
-    msg->ver = 0;
     msg->code = HM_REPORTING;
     msg->id = 0; /* temporary set */
-    msg->len = 0;
     msg->flags = 0;
     
     n = sendto(m_base.fd, snd_buf, BUFLEN, 0, (struct sockaddr *) &m_base.m_addr, sizeof(struct sockaddr_in));
@@ -167,7 +166,7 @@ void *commu_proc(void *data)
     struct hostent *server_host_name;
     int n;
     struct s_com *msg;
-
+printf("communication thread started!\n");
     if(wait_for_base() < 0)
     {
         printf("BASE not responsed!\n");
@@ -208,9 +207,26 @@ void *commu_proc(void *data)
         msg = (struct s_com *)rcv_buf;
         switch(msg->code)
         {
-            case BA_INSTRUCT_MOVE:
+            case BA_INSTRUCTION_MOVE_FORWARD:
             {
                 printf("received  BA_INSTRUCT_MOVE command from base\n");
+                //start_motor();
+                break;
+            }
+            case BA_LIGHT_CMD:
+            {
+                struct s_base_light *light_cmd = (struct s_base_light *)(rcv_buf + sizeof(struct s_com));
+                if(light_cmd->on_off == BA_LIGHT_ON) {
+                    set_led_on();
+                }
+                else {
+                    set_led_off();
+                }
+                break;
+            }
+            default:
+            {
+                printf("UNKNOWN command(%d) is received!\n", msg->code);
                 break;
             }
         }

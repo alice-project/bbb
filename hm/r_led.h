@@ -3,6 +3,8 @@
 
 int led_blink(void *);
 int led_regist();
+int set_led_on();
+int set_led_off();
 
 #endif
 

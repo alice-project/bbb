@@ -190,7 +190,7 @@ static int varify_gpio()
         {
             if((gpio_used[i][1] == gpio_used[j][1]) && (gpio_used[i][2] == gpio_used[j][2]))
             {
-                printf("GPIO Varify Failed: %d-%d\n", i, j);
+                printf("GPIO Verify Failed: %d-%d\n", i, j);
                 return -1;
             }
         }
@@ -354,7 +354,7 @@ int gpio_init()
   #endif
 
   #ifdef DEBUG
-//    print_all_mode();
+    print_all_mode();
   #endif
 
     for (i = 0;i < 4;i++)
@@ -396,9 +396,6 @@ int gpio_init()
 
         gpio_set_dir(gpio_used[i][1], gpio_used[i][2], gpio_used[i][3]);
     }
-
-//    print_all_mode();
-
 }
 
 int gpio_exit()

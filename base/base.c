@@ -15,7 +15,7 @@
 
 #include "pub.h"
 #include "common.h"
-#include "map.h"
+//#include "map.h"
 #include "watcher.h"
 
 extern int g_hm_id;
@@ -48,7 +48,7 @@ static void get_my_addr()
 
     ifr.ifr_addr.sa_family = AF_INET;
 
-    strncpy(ifr.ifr_name, "lo", IFNAMSIZ-1);
+    strncpy(ifr.ifr_name, "wlan0", IFNAMSIZ-1);
 
     ioctl(fd, SIOCGIFADDR, &ifr);
 
@@ -62,14 +62,37 @@ static void get_my_addr()
     close(fd);
 }
 
+static gboolean expose_event(GtkWidget *map, GdkEventExpose *event, gpointer data)
+{
+    cairo_t *cr;
+
+    cr = gdk_cairo_create(gtk_widget_get_window(GTK_WIDGET(map)));
+    cairo_arc(cr, 128,128,76.8,0,2*3.14);
+    cairo_clip(cr);
+
+    cairo_new_path(cr);
+    cairo_rectangle(cr, 0, 0, 256, 256);
+    cairo_fill(cr);
+    cairo_set_source_rgb(cr, 0, 1, 0);
+    cairo_move_to(cr, 0, 0);
+    cairo_line_to(cr, 256, 256);
+    cairo_move_to(cr, 256, 0);
+    cairo_line_to(cr, 0, 256);
+    cairo_set_line_width(cr, 10.0);
+    cairo_stroke(cr);
+    cairo_destroy(cr);
+
+    return TRUE;
+}
+
 static void create_layout()
 {
     GtkWidget *window;
     GtkWidget *status_bar;
     GtkWidget *tool_bar;
-    GtkWidget *top_box, *mid_pane;
-    GtkWidget *text_view, *scrolled_win;
-    GtkWidget *map;
+    GtkWidget *main_box, *main_pane;
+    GtkWidget *text_view;
+    GtkWidget *map, *viewport;
 
     window = gtk_window_new (GTK_WINDOW_TOPLEVEL);
     
@@ -77,33 +100,37 @@ static void create_layout()
     gtk_container_set_border_width (GTK_CONTAINER (window), 1);
     gtk_widget_set_size_request (window, gdk_screen_width(), gdk_screen_height());
     
-    top_box = gtk_vbox_new (FALSE, 1);
+    main_box = gtk_vbox_new (FALSE, 1);
+    gtk_container_set_border_width(GTK_CONTAINER(main_box), 0);
 
     tool_bar = create_toolbar();
-    gtk_box_pack_start(GTK_BOX(top_box), tool_bar, FALSE, TRUE, 0);
+    gtk_box_pack_start(GTK_BOX(main_box), tool_bar, FALSE, TRUE, 0);
 
-    mid_pane = gtk_hpaned_new ();
     text_view = gtk_text_view_new ();
     gtk_text_view_set_editable(GTK_TEXT_VIEW(text_view), FALSE);
     log_buf = gtk_text_view_get_buffer (GTK_TEXT_VIEW (text_view));
     gtk_text_buffer_set_text (log_buf, "Welcome to hamster base!\n", -1);
-    scrolled_win = gtk_scrolled_window_new (NULL, NULL);
-    gtk_container_add (GTK_CONTAINER (scrolled_win), text_view);
+
+    main_pane = gtk_scrolled_window_new(NULL, NULL);
+    gtk_widget_set_size_request(main_pane, 600, 400);
+//    map = gtk_drawing_area_new();
+//    g_signal_connect (map, "expose_event", G_CALLBACK (expose_event), NULL);
+
+    viewport = gtk_viewport_new (gtk_scrolled_window_get_hadjustment(GTK_SCROLLED_WINDOW(main_pane)),
+                                 gtk_scrolled_window_get_vadjustment(GTK_SCROLLED_WINDOW(main_pane)));
+//    gtk_container_add (GTK_CONTAINER (viewport), map);
+    gtk_container_add (GTK_CONTAINER (main_pane), viewport);
     
-    map = ants_map_new();
-    gtk_widget_set_size_request(map, 600, 400);
-    gtk_paned_pack1(GTK_PANED (mid_pane), scrolled_win, TRUE, FALSE);
-    gtk_paned_pack2(GTK_PANED (mid_pane), map, TRUE, TRUE);
-    
-    gtk_box_pack_start (GTK_BOX (top_box), mid_pane, TRUE, TRUE, 0);
+    gtk_box_pack_start (GTK_BOX (main_box), main_pane, TRUE, TRUE, 0);
+    gtk_box_pack_start (GTK_BOX (main_box), text_view, TRUE, TRUE, 0);
     
     g_signal_connect (G_OBJECT (window), "destroy", G_CALLBACK (gtk_main_quit), NULL);
     
     status_bar = gtk_statusbar_new();
     gtk_statusbar_get_context_id(GTK_STATUSBAR(status_bar), "tracking");
-    gtk_box_pack_start (GTK_BOX (top_box), status_bar, FALSE, TRUE, 0);
+    gtk_box_pack_start (GTK_BOX (main_box), status_bar, FALSE, TRUE, 0);
 
-    gtk_container_add (GTK_CONTAINER (window), top_box);
+    gtk_container_add (GTK_CONTAINER (window), main_box);
     
     gtk_widget_show_all (window);
 //    gdk_window_maximize(window->window);
@@ -256,8 +283,8 @@ gpointer multicast_guard()
 static void socket_connect()
 {
     GThread *comm, *mc_thread;
-    comm = g_thread_create(start_watching, NULL, TRUE, NULL);
-    mc_thread = g_thread_create(multicast_guard, NULL, TRUE, NULL);
+    comm = g_thread_new("Watching", start_watching, NULL);
+    mc_thread = g_thread_new("Guard", multicast_guard, NULL);
 }
 
 static void send_commands()
@@ -278,8 +305,6 @@ static void send_commands()
         return;
     }
 
-printf("sending to %d\n", g_hms[g_hm_id-1].fd);
-
     memset(snd_buf, 0, sizeof(snd_buf));
     msg->code = BA_INSTRUCT_MOVE;
 
@@ -289,8 +314,8 @@ printf("sending to %d\n", g_hms[g_hm_id-1].fd);
 
 int main(int argc, char* argv[])
 {
-    if (!g_thread_supported())
-        g_thread_init(NULL);
+//    if (!g_thread_supported())
+//        g_thread_init(NULL);
     
     gdk_threads_init();
 

@@ -15,68 +15,128 @@
 /plugin/;
 
 /{
-       compatible = "ti,beaglebone", "ti,beaglebone-black";
-       part-number = "MA-GPIO";
-       version = "00A0";
+    compatible = "ti,beaglebone", "ti,beaglebone-black";
+    part-number = "MA-GPIO";
+    version = "00A0";
 
-       exclusive-use = 
-            "P8.11", /* usonic0 trigger */
-            "P9.15", /* usonic0 echo */
-            "P9.31", /* PWM0A, left wheel */
-            "P9.29"; /* PWM0B, right wheel */
+    exclusive-use = 
+        "P8.11", /* usonic0 trigger */
+        "P9.15", /* usonic0 echo */
+        "P8.39",
+        "P8.40";
+/*        "P9.31",  PWM0A, left wheel */
+/*        "P9.29";  PWM0B, right wheel */
 
-       fragment@0 {
-             target = <&am33xx_pinmux>;
-            
-             __overlay__ {
-                 pinctrl_test: MA_GPIO_Pins {
-			       pinctrl-single,pins = <
+    fragment@0 {
+        target = <&am33xx_pinmux>;
+        
+        __overlay__ {
+            pinctrl_sonic: MA_GPIO_Pins {
+	        pinctrl-single,pins = <
 
-				      0x034 0x37  /* P8_11 gpio1[13] 45 OUTPUT MODE7          - sonic trigger */
-				      0x040 0x27  /* P9_15 gpio1[12] 44 INPUT  MODE7 pulldown - sonic echo    */
-                       
+			      0x034 0x37  /* P8_11 gpio1[13] 45 OUTPUT MODE7          - sonic trigger */
+			      0x040 0x27  /* P9_15 gpio1[12] 44 INPUT  MODE7 pulldown - sonic echo    */
+                      
+                  0x0b8 0x37  /* P8_39 gpio2[12] motor power */ 
+                  0x0bc 0x37  /* P8_40 gpio2[13] motor DIR   */ 
 
-			        >;
-		         };
-             };
-       };
+		        >;
+	        };
+        };
+    };
 
-       fragment@1 {
-		target = <&ocp>;
-		__overlay__ {
-			test_helper: helper {
+    fragment@1 {
+        target = <&ocp>;
+        __overlay__ {
+			sonic_helper: helper {
 				compatible = "bone-pinmux-helper";
-				pinctrl-names = "default";
-				pinctrl-0 = <&pinctrl_test>;
-				status = "okay";
+    			pinctrl-names = "default";
+	    		pinctrl-0 = <&pinctrl_sonic>;
+		    	status = "okay";
+		    };
+   		};
+    };
+
+    fragment@2 {
+		target = <&am33xx_pinmux>;
+		__overlay__ {
+			pwm_mosfet_ext1_pins: pinmux_pwm_mosfet_ext1_pins {
+				pinctrl-single,pins = < 					0x024  0x4		/* gpmc_ad9  = ehrpwm2B = P8_13 = Heater_ext1 | MODE 4 */ 				>;
+			};						
+			pwm_mosfet_ext2_pins: pinmux_pwm_mosfet_ext2_pins {
+				pinctrl-single,pins = < 					0x020  0x4      /* gpmc_ad8  = ehrpwm2A = P8_19 = Heater_ext2 | MODE 4 */ 				>;
+			};						
+			pwm_mosfet_hbp_pins: pinmux_pwm_mosfet_hbp_pins {
+				pinctrl-single,pins = < 					0x150  0x3		/* spi0_sclk = ehrpwm0A = P9_14 = Heater_HBP  | MODE 3 */ 				>;
+			};										
+		};
+	};
+
+
+	fragment@3 {
+		target = <&epwmss2>;
+		__overlay__ {
+			status = "okay";
+		};
+	};
+
+	fragment@4 {
+		target = <&ehrpwm2>;
+		__overlay__ {			
+			status = "okay";			
+		};
+	};
+
+	fragment@5 {
+		target = <&epwmss0>;
+		__overlay__ {
+			status = "okay";
+		};
+	};
+
+	fragment@6 {
+		target = <&ehrpwm0>;
+		__overlay__ {			
+			status = "okay";			
+		};
+	};
+
+    fragment@7 {
+		target = <&ocp>;
+		__overlay__ {			
+/*			#address-cells = ;
+			#size-cells = ;
+*/
+			mosfet_ext1 {
+				compatible      = "pwm_motor";
+				pinctrl-names   = "default";
+				pinctrl-0       = <&pwm_mosfet_ext1_pins>;
+				pwms 			= <&ehrpwm2 1 500000 1>;
+				pwm-names 		= "Mosfet_Ext_1";
+				enabled			= <1>;
+				duty			= <0>;
+				status 			= "okay";
+			};
+			mosfet_ext2 {
+				compatible      = "pwm_motor";
+				pinctrl-names   = "default";
+				pinctrl-0       = <&pwm_mosfet_ext2_pins>;
+				pwms 			= <&ehrpwm2 0 500000 1>;
+				pwm-names 		= "Mosfet_Ext_2";
+				enabled			= <1>;
+				duty			= <0>;
+				status 			= "okay";
+			};
+			mosfet_hbp {
+				compatible      = "pwm_motor";
+				pinctrl-names   = "default";
+				pinctrl-0       = <&pwm_mosfet_hbp_pins>;
+				pwms 			= <&ehrpwm0 0 500000 1>;
+				pwm-names 		= "Mosfet_HBP";
+				enabled			= <1>;
+				duty			= <0>;
+				status 			= "okay";
 			};
 		};
-        fragment@2 {
-		    target = <&epwmss2>;
-		        __overlay__ {
-		        	status = "okay";
-		    };
-	    };
-
-    	fragment@3 {
-	    	target = <&ehrpwm2>;
-	    	__overlay__ {			
-	    		status = "okay";			
-	    	};
-	    };
-
-	    fragment@4 {
-		    target = <&epwmss0>;
-		    __overlay__ {
-			    status = "okay";
-		    };
-	    };
-
-	    fragment@5 {
-		    target = <&ehrpwm0>;
-		    __overlay__ {			
-			    status = "okay";			
-		    };
-	    };
-	};
+    };
 };

@@ -10,6 +10,7 @@
 #include "r_message.h"
 #include "r_timer.h"
 #include "r_usonic.h"
+#include "r_motor.h"
 #include "r_led.h"
 #include "r_commu.h"
 
@@ -35,10 +36,12 @@ int system_init()
 
 //    led_regist();
 
-//    usonic_regist();
+    usonic_regist();
+
+    motor_regist();
     
-//    if(gpio_init() < -1)
-//        return -1;
+    if(gpio_init() < -1)
+        return -1;
 
     return 0;
 }
@@ -87,7 +90,7 @@ int main(int argc, char *argv[])
     }
 
     pthread_join(tm_thread, NULL);
-    pthread_join(sonic_thread, NULL);
+    //pthread_join(sonic_thread, NULL);
     pthread_join(commu_thread, NULL);
 
     gpio_exit();

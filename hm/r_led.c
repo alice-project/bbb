@@ -51,4 +51,13 @@ int led_blink(void *d)
     return 0;
 }
 
+int set_led_on()
+{
+    set_pin_high(LED_CONNECTOR, LED_PIN);
+}
+
+int set_led_off()
+{
+    set_pin_low(LED_CONNECTOR, LED_PIN);
+}
 
