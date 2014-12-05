@@ -1,0 +1,31 @@
+PIN     name        ctrl        usage
+P9.11   gpio1[5]    0x27        left dc motor dir control
+P9.12   gpio1[4]    0x27        left dc motor dir control
+P8.13   ehrpwm2B    0x4         left dc motor speed control
+
+P9.13   gpio1[1]    0x27        right dc motor dir control
+P9.14   gpio1[0]    0x27        right dc motor dir control
+P8.19   ehrpwm2A    0x4         right dc motor speed control
+
+P8.34   ehrpwm1B    0x2
+P8.36   ehrpwm1A    0x2
+
+P9.14   ehrpwm1A    0x6
+P9.16   ehrpwm1B    0x6
+P9.21   ehrpwm0B    0x3
+P9.22   ehrpwm0A    0x3
+
+
+P8.7    gpio2[2]    0x37        usonic1 trigger
+P9.28   gpio1[11]   0x27        usonic1 echo
+P8.8    gpio2[3]    0x37        usonic2 trigger
+P9.29   gpio1[12]   0x27        usonic2 echo
+P8.9    gpio2[5]    0x37        usonic3 trigger
+P9.30   gpio1[14]   0x27        usonic3 echo
+P8.10   gpio2[4]    0x37        usonic4 trigger
+P9.31   gpio1[15]   0x27        usonic4 echo
+
+
+
+
+

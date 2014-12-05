@@ -7,6 +7,7 @@
 enum R_MSG_ID {
 /* MessageID 0~99 reserved */
 R_MSG_INVALID = 0,
+R_MSG_TEST,
 
 /* MessageID 100~199 for DC Motor */
 R_MSG_SET_DCMOTOR_SPEED = 100,
@@ -19,6 +20,8 @@ R_MSG_SET_DCMOTOR_SPEED = 100,
 
 
 /* MessageID 400~499 for Timer */
+R_MSG_USONIC_SCAN = 400,
+R_MSG_SERVO_0,
 
 };
 

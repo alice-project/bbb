@@ -1,0 +1,163 @@
+#ifndef _HM_PRU_HP_
+#define _HM_PRU_HP_
+
+
+#define AM33XX
+
+// ***************************************
+// *      Global Macro definitions       *
+// ***************************************
+
+// Refer to this mapping in the file - \prussdrv\include\pruss_intc_mapping.h
+#define PRU0_PRU1_INTERRUPT     17
+#define PRU1_PRU0_INTERRUPT     18
+#define PRU0_ARM_INTERRUPT      19
+#define PRU1_ARM_INTERRUPT      20
+#define ARM_PRU0_INTERRUPT      21
+#define ARM_PRU1_INTERRUPT      22
+
+#define CONST_PRUDRAM   C24
+#define CONST_L3RAM     C30
+#define CONST_DDR       C31
+
+// Address for the Constant table Programmable Pointer Register 0(CTPPR_0)
+#define CONTROL_0       0x22000
+#define CTBIR_0         0x22020
+// Address for the Constant table Programmable Pointer Register 0(CTPPR_0)
+#define CTBIR_1         0x22024
+
+// Address for the Constant table Programmable Pointer Register 0(CTPPR_0)
+#define CTPPR_0         0x22028
+// Address for the Constant table Programmable Pointer Register 1(CTPPR_1)
+#define CTPPR_1         0x2202C
+
+
+// USONIC trigger and echo pins
+// all usonic triggers are mounted on GPIO2
+#define USONIC_TRIGGER_ADDR  0x481ac000
+// all usonic echos are mounted on GPIO1
+#define USONIC_ECHO_ADDR     0x4804c000
+#define USONIC1_TRIGGER_BIT  2
+#define USONIC2_TRIGGER_BIT  3
+#define USONIC3_TRIGGER_BIT  5
+#define USONIC4_TRIGGER_BIT  4
+#define USONIC1_ECHO_BIT     11
+#define USONIC2_ECHO_BIT     12
+#define USONIC3_ECHO_BIT     14
+#define USONIC4_ECHO_BIT     15
+
+#define GPIO_DATAIN          0x138
+#define GPIO_CLEARDATAOUT    0x190
+#define GPIO_SETDATAOUT      0x194
+
+.macro  LD32
+.mparam dst,src
+    LBBO    dst,src,#0x00,4
+.endm
+
+.macro  LD16
+.mparam dst,src
+    LBBO    dst,src,#0x00,2
+.endm
+
+.macro  LD8
+.mparam dst,src
+    LBBO    dst,src,#0x00,1
+.endm
+
+.macro ST32
+.mparam src,dst
+    SBBO    src,dst,#0x00,4
+.endm
+
+.macro ST16
+.mparam src,dst
+    SBBO    src,dst,#0x00,2
+.endm
+
+.macro ST8
+.mparam src,dst
+    SBBO    src,dst,#0x00,1
+.endm
+
+.macro TRIGGER_ON
+.mparam trigger_bit
+    MOV r2, 1<<trigger_bit
+    MOV r3, USONIC_TRIGGER_ADDR | GPIO_SETDATAOUT
+    // set trigger pin high
+    SBBO r2, r3, 0, 4
+.endm
+
+.macro TRIGGER_OFF
+.mparam trigger_bit
+    MOV r2, 1<<trigger_bit
+    MOV r3, USONIC_TRIGGER_ADDR | GPIO_CLEARDATAOUT
+    // set trigger pin high
+    SBBO r2, r3, 0, 4
+.endm
+
+.macro USONIC_PROC
+.mparam trigger_bit, echo_bit, usonic_num
+    TRIGGER_ON trigger_bit
+
+    // for at least 10 us
+    // PRU is 200MHZ, so 10 us is 5 cycles
+    MOV r4, 10
+WAIT_FOR_10US:
+    SUB r4, r4, 1
+    QBGT WAIT_FOR_10US, r4, 0
+
+    MOV r1, CONTROL_0
+    MOV r2, USONIC_ECHO_ADDR | GPIO_DATAIN
+    mov r4, 0
+    SBBO r4, r1, 0xC, 4  // clear the cycle counter first
+
+WAIT_FOR_ECHO_HIGH:
+    LBBO r5, r1, 0xC, 4  // get the cycle
+    MOV r6, 0xFFFFFFFF
+    QBGT FAR_DISTANCE, r5, r6    // to far to be detected
+    LBBO r3, r2, 0, 4
+    QBBS WAIT_FOR_ECHO_HIGH, r3, echo_bit
+    MOV r4, 0
+    SBBO r4, r1, 0xC, 4  // clear the cycle counter
+    TRIGGER_OFF trigger_bit
+
+// cycle to distance:
+// counter/200000000*170M=counter/2000000*170cm
+// 50cm is about 0x8F9CB cycles
+WAIT_FOR_ECHO_LOW:
+    LBBO r5, r1, 0xC, 4  // get the cycle
+    MOV r6, 0x8F9CB
+    QBGT FAR_DISTANCE, r5, r6    // to far to be detected
+    LBBO r3, r2, 0, 4
+    QBBC WAIT_FOR_ECHO_LOW, r3, echo_bit
+    // the ending time is saved in r4
+    LBBO r4, r1, 0xC, 4  // read the cycle counter
+    //Store result in into memory using constant table
+    MOV r5, usonic_num
+    LSL r5, r5, 2  // every usonic result need 4 bytes
+    SBCO r4, CONST_PRUDRAM, r5, 4
+    JMP ENDM
+
+FAR_DISTANCE:
+    MOV r4, 0xFFFFFFFF
+    MOV r5, usonic_num
+    LSL r5, r5, 2  // every usonic result need 4 bytes
+    SBCO r4, CONST_PRUDRAM, r5, 4
+
+ENDM:
+
+.endm
+
+
+// ***************************************
+// *    Global Structure Definitions     *
+// ***************************************
+
+
+// ***************************************
+// *     Global Register Assignments     *
+// ***************************************
+
+
+#endif //_PRU_memAccessPRUDataRAM_HP_

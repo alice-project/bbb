@@ -13,6 +13,7 @@
 #include "pub.h"
 #include "common.h"
 #include "gpio.h"
+#include "pwm.h"
 #include "r_event.h"
 #include "r_message.h"
 #include "r_timer.h"
@@ -125,6 +126,7 @@ static int wait_for_base()
             {
                 rcv_payload = (struct s_mc_ipaddr *)(rcv_msg + sizeof(struct s_com));
                 d_base_ipaddr =  htonl(rcv_payload->ipaddr);
+printf("BASE IP is 0x%x\n", d_base_ipaddr);
                 close(sockfd);
                 return 0;
             }
@@ -166,7 +168,7 @@ void *commu_proc(void *data)
     struct hostent *server_host_name;
     int n;
     struct s_com *msg;
-printf("communication thread started!\n");
+    printf("communication thread started!\n");
     if(wait_for_base() < 0)
     {
         printf("BASE not responsed!\n");
@@ -207,14 +209,16 @@ printf("communication thread started!\n");
         msg = (struct s_com *)rcv_buf;
         switch(msg->code)
         {
-            case BA_INSTRUCTION_MOVE_FORWARD:
+            case BA_MOTION_CMD:
             {
-                printf("received  BA_INSTRUCT_MOVE command from base\n");
-                //start_motor();
+                struct s_base_motion *motion_cmd = (struct s_base_motion *)(rcv_buf + sizeof(struct s_com));
+                printf("received  BA_MOTION_CMD command from base\n");
+                parser_motion_cmd(motion_cmd);
                 break;
             }
             case BA_LIGHT_CMD:
             {
+                printf("received  BA_LIGHT_CMD command from base\n");
                 struct s_base_light *light_cmd = (struct s_base_light *)(rcv_buf + sizeof(struct s_com));
                 if(light_cmd->on_off == BA_LIGHT_ON) {
                     set_led_on();
@@ -222,6 +226,29 @@ printf("communication thread started!\n");
                 else {
                     set_led_off();
                 }
+                break;
+            }
+            case BA_TEST_CMD:
+            {
+                parser_test_cmd();
+                break;
+            }
+            case BA_PWM_DUTY_CMD:
+            {
+                struct s_base_pwm_duty *duty_cmd = (struct s_base_pwm_duty *)(rcv_buf + sizeof(struct s_com));
+                if(duty_cmd->cmd == 0)
+                    pwm_incr_duty(8,13,10);
+                else
+                    pwm_incr_duty(8,13,-10);
+                break;
+            }
+            case BA_PWM_FREQ_CMD:
+            {
+                struct s_base_pwm_freq *freq_cmd = (struct s_base_pwm_freq *)(rcv_buf + sizeof(struct s_com));
+                if(freq_cmd->cmd == 0)
+                    pwm_incr_freq(8,13,1000);
+                else
+                    pwm_incr_freq(8,13,-1000);
                 break;
             }
             default:

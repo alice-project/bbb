@@ -7,8 +7,6 @@
 #include "r_led.h"
 #include "gpio.h"
 
-//#define LED_CONNECTOR  9
-//#define LED_PIN        11
 #define LED_CONNECTOR  8
 #define LED_PIN        11
 

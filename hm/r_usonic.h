@@ -14,11 +14,13 @@ enum {
 
 enum {
     USONIC_IDLE = 0,
+    USONIC_WAIT,
     USONIC_BUSY,
+    USONIC_FIN,
 };
 
-void *usonic_sensor_scan(void *data);
-void usonic_regist();
+int usonic_sensor_scan(void *data);
+int usonic_regist();
 
 #endif
 

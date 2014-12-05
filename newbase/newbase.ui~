@@ -181,6 +181,7 @@
                               <object class="GtkSeparator" id="separator1">
                                 <property name="visible">True</property>
                                 <property name="can_focus">False</property>
+                                <property name="margin_right">10</property>
                               </object>
                               <packing>
                                 <property name="expand">False</property>
@@ -278,11 +279,14 @@
                             <property name="row_spacing">2</property>
                             <property name="column_spacing">5</property>
                             <child>
-                              <object class="GtkButton" id="forward_bt">
-                                <property name="label" translatable="yes">Move Forward</property>
+                              <object class="GtkRadioButton" id="rb_left_forward">
+                                <property name="label" translatable="yes">Left Forward</property>
                                 <property name="visible">True</property>
                                 <property name="can_focus">True</property>
-                                <property name="receives_default">True</property>
+                                <property name="receives_default">False</property>
+                                <property name="xalign">0</property>
+                                <property name="active">True</property>
+                                <property name="draw_indicator">True</property>
                               </object>
                               <packing>
                                 <property name="left_attach">0</property>
@@ -292,11 +296,48 @@
                               </packing>
                             </child>
                             <child>
-                              <object class="GtkButton" id="stop_bt">
-                                <property name="label" translatable="yes">Stop</property>
+                              <object class="GtkRadioButton" id="rb_left_stop">
+                                <property name="label" translatable="yes">Left Stop</property>
                                 <property name="visible">True</property>
                                 <property name="can_focus">True</property>
-                                <property name="receives_default">True</property>
+                                <property name="receives_default">False</property>
+                                <property name="xalign">0</property>
+                                <property name="active">True</property>
+                                <property name="draw_indicator">True</property>
+                              </object>
+                              <packing>
+                                <property name="left_attach">1</property>
+                                <property name="top_attach">0</property>
+                                <property name="width">1</property>
+                                <property name="height">1</property>
+                              </packing>
+                            </child>
+                            <child>
+                              <object class="GtkRadioButton" id="rb_left_reverse">
+                                <property name="label" translatable="yes">Left Reversely</property>
+                                <property name="visible">True</property>
+                                <property name="can_focus">True</property>
+                                <property name="receives_default">False</property>
+                                <property name="xalign">0</property>
+                                <property name="active">True</property>
+                                <property name="draw_indicator">True</property>
+                              </object>
+                              <packing>
+                                <property name="left_attach">2</property>
+                                <property name="top_attach">0</property>
+                                <property name="width">1</property>
+                                <property name="height">1</property>
+                              </packing>
+                            </child>
+                            <child>
+                              <object class="GtkRadioButton" id="rb_right_forward">
+                                <property name="label" translatable="yes">Right Forward</property>
+                                <property name="visible">True</property>
+                                <property name="can_focus">True</property>
+                                <property name="receives_default">False</property>
+                                <property name="xalign">0</property>
+                                <property name="active">True</property>
+                                <property name="draw_indicator">True</property>
                               </object>
                               <packing>
                                 <property name="left_attach">0</property>
@@ -306,48 +347,118 @@
                               </packing>
                             </child>
                             <child>
-                              <object class="GtkButton" id="backward_bt">
-                                <property name="label" translatable="yes">Move Backward</property>
+                              <object class="GtkRadioButton" id="rb_right_stop">
+                                <property name="label" translatable="yes">Right  Stop</property>
+                                <property name="visible">True</property>
+                                <property name="can_focus">True</property>
+                                <property name="receives_default">False</property>
+                                <property name="xalign">0</property>
+                                <property name="active">True</property>
+                                <property name="draw_indicator">True</property>
+                              </object>
+                              <packing>
+                                <property name="left_attach">1</property>
+                                <property name="top_attach">1</property>
+                                <property name="width">1</property>
+                                <property name="height">1</property>
+                              </packing>
+                            </child>
+                            <child>
+                              <object class="GtkRadioButton" id="rb_right_reverse">
+                                <property name="label" translatable="yes">Right  Reversely</property>
+                                <property name="visible">True</property>
+                                <property name="can_focus">True</property>
+                                <property name="receives_default">False</property>
+                                <property name="xalign">0</property>
+                                <property name="active">True</property>
+                                <property name="draw_indicator">True</property>
+                              </object>
+                              <packing>
+                                <property name="left_attach">2</property>
+                                <property name="top_attach">1</property>
+                                <property name="width">1</property>
+                                <property name="height">1</property>
+                              </packing>
+                            </child>
+                            <child>
+                              <object class="GtkButton" id="button_motion_cmd">
+                                <property name="label" translatable="yes">Send Motion Command</property>
                                 <property name="visible">True</property>
                                 <property name="can_focus">True</property>
                                 <property name="receives_default">True</property>
+                                <signal name="clicked" handler="on_button_motion_cmd_clicked" swapped="no"/>
                               </object>
                               <packing>
-                                <property name="left_attach">0</property>
+                                <property name="left_attach">1</property>
                                 <property name="top_attach">2</property>
                                 <property name="width">1</property>
                                 <property name="height">1</property>
                               </packing>
                             </child>
                             <child>
-                              <object class="GtkButton" id="button_light_on">
-                                <property name="label" translatable="yes">Light ON</property>
+                              <object class="GtkButton" id="button_duty_incr">
+                                <property name="label" translatable="yes">Duty++</property>
                                 <property name="visible">True</property>
                                 <property name="can_focus">True</property>
                                 <property name="receives_default">True</property>
-                                <signal name="clicked" handler="on_button_light_on_clicked" swapped="no"/>
                               </object>
                               <packing>
-                                <property name="left_attach">1</property>
-                                <property name="top_attach">0</property>
+                                <property name="left_attach">0</property>
+                                <property name="top_attach">3</property>
                                 <property name="width">1</property>
                                 <property name="height">1</property>
                               </packing>
                             </child>
                             <child>
-                              <object class="GtkButton" id="button_light_off">
-                                <property name="label" translatable="yes">Light OFF</property>
+                              <object class="GtkButton" id="button2_duty_dec">
+                                <property name="label" translatable="yes">Duty--</property>
                                 <property name="visible">True</property>
                                 <property name="can_focus">True</property>
                                 <property name="receives_default">True</property>
-                                <signal name="clicked" handler="on_button_light_off_clicked" swapped="no"/>
                               </object>
                               <packing>
                                 <property name="left_attach">1</property>
-                                <property name="top_attach">1</property>
+                                <property name="top_attach">3</property>
                                 <property name="width">1</property>
                                 <property name="height">1</property>
                               </packing>
+                            </child>
+                            <child>
+                              <object class="GtkButton" id="button_freq_incr">
+                                <property name="label" translatable="yes">Freq++</property>
+                                <property name="visible">True</property>
+                                <property name="can_focus">True</property>
+                                <property name="receives_default">True</property>
+                              </object>
+                              <packing>
+                                <property name="left_attach">0</property>
+                                <property name="top_attach">4</property>
+                                <property name="width">1</property>
+                                <property name="height">1</property>
+                              </packing>
+                            </child>
+                            <child>
+                              <object class="GtkButton" id="button_freq_dec">
+                                <property name="label" translatable="yes">Freq--</property>
+                                <property name="visible">True</property>
+                                <property name="can_focus">True</property>
+                                <property name="receives_default">True</property>
+                              </object>
+                              <packing>
+                                <property name="left_attach">1</property>
+                                <property name="top_attach">4</property>
+                                <property name="width">1</property>
+                                <property name="height">1</property>
+                              </packing>
+                            </child>
+                            <child>
+                              <placeholder/>
+                            </child>
+                            <child>
+                              <placeholder/>
+                            </child>
+                            <child>
+                              <placeholder/>
                             </child>
                             <child>
                               <placeholder/>
@@ -467,7 +578,43 @@
                         <property name="can_focus">False</property>
                         <property name="left_padding">12</property>
                         <child>
-                          <placeholder/>
+                          <object class="GtkBox" id="box6">
+                            <property name="visible">True</property>
+                            <property name="can_focus">False</property>
+                            <property name="orientation">vertical</property>
+                            <property name="spacing">4</property>
+                            <child>
+                              <object class="GtkButton" id="button_servo">
+                                <property name="label" translatable="yes">Servo Motor</property>
+                                <property name="visible">True</property>
+                                <property name="can_focus">True</property>
+                                <property name="receives_default">True</property>
+                                <signal name="clicked" handler="on_button_servo_clicked" swapped="no"/>
+                              </object>
+                              <packing>
+                                <property name="expand">False</property>
+                                <property name="fill">True</property>
+                                <property name="position">0</property>
+                              </packing>
+                            </child>
+                            <child>
+                              <object class="GtkButton" id="button_test">
+                                <property name="label" translatable="yes">Test</property>
+                                <property name="visible">True</property>
+                                <property name="can_focus">True</property>
+                                <property name="receives_default">True</property>
+                                <signal name="clicked" handler="on_button_test_clicked" swapped="no"/>
+                              </object>
+                              <packing>
+                                <property name="expand">False</property>
+                                <property name="fill">True</property>
+                                <property name="position">1</property>
+                              </packing>
+                            </child>
+                            <child>
+                              <placeholder/>
+                            </child>
+                          </object>
                         </child>
                       </object>
                     </child>

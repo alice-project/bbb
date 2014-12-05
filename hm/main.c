@@ -13,6 +13,8 @@
 #include "r_motor.h"
 #include "r_led.h"
 #include "r_commu.h"
+#include "r_test.h"
+#include "r_servo.h"
 
 struct s_hm_state m_state;
 
@@ -37,10 +39,18 @@ int system_init()
 //    led_regist();
 
     usonic_regist();
+    if(usonic_init() < 0)
+    {
+        printf("USONIC INIT failed!\n");
+        return -1;
+    }
+    printf("USONIC INIT FIN!\n");
 
     motor_regist();
+    servo_regist();
+    servo_init();
     
-    if(gpio_init() < -1)
+    if(gpio_init() < 0)
         return -1;
 
     return 0;
@@ -52,13 +62,17 @@ int main(int argc, char *argv[])
     struct r_msg *msg;
 
     pthread_t tm_thread;
-    pthread_t sonic_thread;
     pthread_t commu_thread;
 
     if(system_init() < 0)
         return -1;
 
 //    set_timer(0, R_TIMER_LOOP, 1000, led_blink, NULL);
+//    set_timer(R_MSG_TEST, R_TIMER_LOOP, 5000, hm_test, NULL);
+    // check the ssonic every 5 seconds.
+    set_timer(R_MSG_USONIC_SCAN, R_TIMER_LOOP, 5000, usonic_sensor_scan, NULL);
+    set_timer(R_MSG_SERVO_0, R_TIMER_LOOP, 1000, servo_0_rotating, 0);
+
     pthread_create(&tm_thread, NULL, &timer_scan_thread, NULL);
 //    pthread_create(&sonic_thread, NULL, &usonic_sensor_scan, NULL);
     pthread_create(&commu_thread, NULL, &commu_proc, NULL);
@@ -90,7 +104,7 @@ int main(int argc, char *argv[])
     }
 
     pthread_join(tm_thread, NULL);
-    //pthread_join(sonic_thread, NULL);
+//    pthread_join(sonic_thread, NULL);
     pthread_join(commu_thread, NULL);
 
     gpio_exit();

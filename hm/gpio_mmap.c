@@ -190,7 +190,7 @@ static int varify_gpio()
         {
             if((gpio_used[i][1] == gpio_used[j][1]) && (gpio_used[i][2] == gpio_used[j][2]))
             {
-                printf("GPIO Verify Failed: %d-%d\n", i, j);
+                printf("GPIO Verify Failed: %d-%d\n", gpio_used[i][1], gpio_used[i][2]);
                 return -1;
             }
         }
@@ -298,7 +298,7 @@ static print_all_mode()
             printf("%s\n", gpio_name[i][0]);
         else
         {
-            printf("%p: 0x%x,%s\n", (ctrl_addr + gpio_mode_offset[i]), *(unsigned int *)(ctrl_addr + gpio_mode_offset[i]), gpio_name[i][*(unsigned int *)(ctrl_addr + gpio_mode_offset[i]) & 0x7]);
+            printf("%p: 0x%x,%s\n", (gpio_mode_offset[i]), *(unsigned int *)(ctrl_addr + gpio_mode_offset[i]), gpio_name[i][*(unsigned int *)(ctrl_addr + gpio_mode_offset[i]) & 0x7]);
         }
 
     }

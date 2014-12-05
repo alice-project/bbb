@@ -27,14 +27,44 @@ struct s_base_light
     unsigned int on_off;
 };
 
+
+/**/
+#define LEFT_SIDE  0
+#define RIGHT_SIDE 1
+
+#define POSITIVE_DIR  0
+#define NEGATIVE_DIR  1
+
+#define START_ACTION  0
+#define STOP_ACTION   1
+struct s_base_motion
+{
+    unsigned int side;
+    unsigned int action;
+    unsigned int dir;
+};
+
+struct s_base_pwm_duty
+{
+    unsigned int cmd;
+};
+
+struct s_base_pwm_freq
+{
+    unsigned int cmd;
+};
+
 #define MUL_IPADDR  "224.1.1.1"
 #define BASE_PORT   7878
 
 /* fixed message length between BASE and HM */
 #define BUFLEN 256
 
+/* Operation Mode */
 #define MANUAL_MODE 0
 #define AUTO_MODE   1
+
+/*  */
 
 enum {
     /* 0 ~ 127: hm to base */
@@ -45,9 +75,10 @@ enum {
     BA_MC_IPADDR = 128,
     BA_GC_SETTINGS,      /* General Control Settings */
     BA_LIGHT_CMD,
-    BA_INSTRUCTION_MOVE_FORWARD,
-    BA_INSTRUCTION_MOVE_BACKWARD,
-    BA_INSTRUCTION_STOP,
+    BA_MOTION_CMD,
+    BA_TEST_CMD,
+    BA_PWM_DUTY_CMD,
+    BA_PWM_FREQ_CMD,
 };
 
 
