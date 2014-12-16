@@ -16,6 +16,7 @@
 #define ARM_PRU0_INTERRUPT      21
 #define ARM_PRU1_INTERRUPT      22
 
+#define CONST_PRUCFG    C4
 #define CONST_PRUDRAM   C24
 #define CONST_L3RAM     C30
 #define CONST_DDR       C31
@@ -35,16 +36,16 @@
 // USONIC trigger and echo pins
 // all usonic triggers are mounted on GPIO2
 #define USONIC_TRIGGER_ADDR  0x481ac000
-// all usonic echos are mounted on GPIO1
-#define USONIC_ECHO_ADDR     0x4804c000
+// all usonic echos are mounted on GPIO3
+#define USONIC_ECHO_ADDR     0x481ae000
 #define USONIC1_TRIGGER_BIT  2
 #define USONIC2_TRIGGER_BIT  3
 #define USONIC3_TRIGGER_BIT  5
 #define USONIC4_TRIGGER_BIT  4
-#define USONIC1_ECHO_BIT     11
-#define USONIC2_ECHO_BIT     12
-#define USONIC3_ECHO_BIT     14
-#define USONIC4_ECHO_BIT     15
+#define USONIC1_ECHO_BIT     17
+#define USONIC2_ECHO_BIT     15
+#define USONIC3_ECHO_BIT     16
+#define USONIC4_ECHO_BIT     14
 
 #define GPIO_DATAIN          0x138
 #define GPIO_CLEARDATAOUT    0x190
@@ -80,74 +81,63 @@
     SBBO    src,dst,#0x00,1
 .endm
 
-.macro TRIGGER_ON
-.mparam trigger_bit
-    MOV r2, 1<<trigger_bit
-    MOV r3, USONIC_TRIGGER_ADDR | GPIO_SETDATAOUT
-    // set trigger pin high
-    SBBO r2, r3, 0, 4
-.endm
 
-.macro TRIGGER_OFF
-.mparam trigger_bit
-    MOV r2, 1<<trigger_bit
-    MOV r3, USONIC_TRIGGER_ADDR | GPIO_CLEARDATAOUT
-    // set trigger pin high
-    SBBO r2, r3, 0, 4
+.macro DELAY_100
+MOV r10, 0
+DELAY:
+    ADD r10, r10, 1
+    QBNE DELAY, r10, 0xe0
 .endm
 
 .macro USONIC_PROC
-.mparam trigger_bit, echo_bit, usonic_num
-    TRIGGER_ON trigger_bit
-
-    // for at least 10 us
-    // PRU is 200MHZ, so 10 us is 5 cycles
-    MOV r4, 10
-WAIT_FOR_10US:
-    SUB r4, r4, 1
-    QBGT WAIT_FOR_10US, r4, 0
-
-    MOV r1, CONTROL_0
-    MOV r2, USONIC_ECHO_ADDR | GPIO_DATAIN
-    mov r4, 0
-    SBBO r4, r1, 0xC, 4  // clear the cycle counter first
-
-WAIT_FOR_ECHO_HIGH:
-    LBBO r5, r1, 0xC, 4  // get the cycle
-    MOV r6, 0xFFFFFFFF
-    QBGT FAR_DISTANCE, r5, r6    // to far to be detected
-    LBBO r3, r2, 0, 4
-    QBBS WAIT_FOR_ECHO_HIGH, r3, echo_bit
+.mparam trigger_bit, echo_bit, usonic_num, pru_bit
+    MOV r0, 1<<trigger_bit
+    MOV r1, USONIC_TRIGGER_ADDR | GPIO_SETDATAOUT
+    MOV r2, USONIC_TRIGGER_ADDR | GPIO_CLEARDATAOUT
+    MOV r3, CONTROL_0
     MOV r4, 0
-    SBBO r4, r1, 0xC, 4  // clear the cycle counter
-    TRIGGER_OFF trigger_bit
+    SBBO r4, r3, 0xC, 4  // clear the cycle counter first
+
+    MOV r5, 0xFFFFFFF
+    SBBO r0, r1, 0, 4  // set trigger high
+WAIT_FOR_ECHO_HIGH:
+    LBBO r6, r3, 0xC, 4  // get the cycle
+    QBLE FAR_DISTANCE, r6, r5    // to far to be detected
+    QBBC WAIT_FOR_ECHO_HIGH, r31, pru_bit
+    MOV r8, 0
+    SBBO r8, r3, 0xC, 4  // clear the cycle counter
+
+    SBBO r0, r2, 0, 4  // set trigger low
+DELAY_100
 
 // cycle to distance:
 // counter/200000000*170M=counter/2000000*170cm
-// 50cm is about 0x8F9CB cycles
+// 1m is about 0x11F396 cycles
+    MOV r7, 0x11F396
 WAIT_FOR_ECHO_LOW:
-    LBBO r5, r1, 0xC, 4  // get the cycle
-    MOV r6, 0x8F9CB
-    QBGT FAR_DISTANCE, r5, r6    // to far to be detected
-    LBBO r3, r2, 0, 4
-    QBBC WAIT_FOR_ECHO_LOW, r3, echo_bit
-    // the ending time is saved in r4
-    LBBO r4, r1, 0xC, 4  // read the cycle counter
+    LBBO r8, r3, 0xC, 4  // get the cycle
+    QBLE FAR_DISTANCE, r8, r7    // to far to be detected
+    QBBS WAIT_FOR_ECHO_LOW, r31, pru_bit
+    LBBO r8, r3, 0xC, 4  // read the cycle counter
+
+STORE_RESULT:
     //Store result in into memory using constant table
-    MOV r5, usonic_num
-    LSL r5, r5, 2  // every usonic result need 4 bytes
-    SBCO r4, CONST_PRUDRAM, r5, 4
+    MOV r7, usonic_num
+    LSL r7, r7, 2  // every usonic result need 4 bytes
+    SBCO r8, CONST_PRUDRAM, r7, 4
     JMP ENDM
 
 FAR_DISTANCE:
-    MOV r4, 0xFFFFFFFF
-    MOV r5, usonic_num
-    LSL r5, r5, 2  // every usonic result need 4 bytes
-    SBCO r4, CONST_PRUDRAM, r5, 4
+//    MOV r8, 0xFFFFFFFF
+MOV r8,5555
+    MOV r7, usonic_num
+    LSL r7, r7, 2  // every usonic result need 4 bytes
+    SBCO r8, CONST_PRUDRAM, r7, 4
 
 ENDM:
 
 .endm
+
 
 
 // ***************************************

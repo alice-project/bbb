@@ -39,6 +39,12 @@ int system_init()
 //    led_regist();
 
     usonic_regist();
+    servo_regist();
+    motor_regist();
+
+    if(gpio_init() < 0)
+        return -1;
+
     if(usonic_init() < 0)
     {
         printf("USONIC INIT failed!\n");
@@ -46,13 +52,11 @@ int system_init()
     }
     printf("USONIC INIT FIN!\n");
 
-    motor_regist();
-    servo_regist();
+    motor_init();
+    printf("MOTOR INIT FIN!\n");
+
     servo_init();
     
-    if(gpio_init() < 0)
-        return -1;
-
     return 0;
 }
 
@@ -101,6 +105,7 @@ int main(int argc, char *argv[])
             default:
                 break;
         }
+        usleep(100);
     }
 
     pthread_join(tm_thread, NULL);

@@ -29,13 +29,13 @@
 	exclusive-use =
 	/* state the resources this cape uses */
 
-	/* ------ SSONIC TRIGGER ------ */
+	/* ------ usonic TRIGGER ------ */
 		"P8.7",		/* gpio2.2  gpio66 */
 		"P8.8",		/* gpio2.3  gpio67 */
 		"P8.9",		/* gpio2.5  gpio69 */
 		"P8.10",	/* gpio2.4  gpio68 */
 
-	/* ------ SSONIC ECHO ------ */
+	/* ------ usonic ECHO ------ */
 		"P9.28",		/* gpio3.17  gpio113 */
 		"P9.29",		/* gpio3.15  gpio111 */
 		"P9.30",		/* gpio3.16  gpio112 */
@@ -58,12 +58,12 @@
 		"P9.14";    /* gpio1.18 */
 
 
-	/* ----------- SSONIC TRIGGER ------------ */
+	/* ----------- usonic TRIGGER ------------ */
 
 	fragment@0 {
 		target = <&am33xx_pinmux>;
 		__overlay__ {
-			ssonic_trigger_enable_pins: pinmux_ssonic_trigger_enable_pins {
+			usonic_trigger_enable_pins: usonic_trigger_pins {
 				pinctrl-single,pins = <
 					0x90 0x07  /*  P8-7 */
 					0x94 0x07  /*  P8-8 */
@@ -77,33 +77,33 @@
 	fragment@1 {
 		target = <&ocp>;
 		__overlay__ {
-			ssonic_trigger_enables {
+			usonic_trigger_enables {
 				compatible = "gpio-of-helper";
 				status = "okay";
 				pinctrl-names = "default";
-				pinctrl-0 = <&ssonic_trigger_enable_pins>;
+				pinctrl-0 = <&usonic_trigger_enable_pins>;
 
-				ssonic1_trigger {
-					gpio-name = "robot:ssonic1_trigger";
+				usonic1_trigger {
+					gpio-name = "robot:usonic1_trigger";
 					gpio = <&gpio3 2 0>;
 					output;
 					init-low;
 				};
-				ssonic2_trigger {
-					gpio-name = "robot:ssonic2_trigger";
+				usonic2_trigger {
+					gpio-name = "robot:usonic2_trigger";
 					gpio = <&gpio3 3 0>;
 					output;
 					init-low;
 				};
-				ssonic3_trigger {
-					gpio-name = "robot:ssonic3_trigger";
-					gpio = <&gpio3 4 0>;
+				usonic3_trigger {
+					gpio-name = "robot:usonic3_trigger";
+					gpio = <&gpio3 5 0>;
 					output;
 					init-low;
 				};
-				ssonic4_trigger {
-					gpio-name = "robot:ssonic4_trigger";
-					gpio = <&gpio3 5 0>;
+				usonic4_trigger {
+					gpio-name = "robot:usonic4_trigger";
+					gpio = <&gpio3 4 0>;
 					output;
 					init-low;
 				};
@@ -172,15 +172,15 @@
 		target = <&am33xx_pinmux>;
 		__overlay__ {
 
-			P8_13_ehrpwm_pin: pinmux_P8_13_ehrpwm_pin {
+			P8_13_ehrpwm_pin: P8_13_ehrpwm_pin {
 				pinctrl-single,pins = <0x24  0x4>; /* P8_13 | MODE 4 */
 			};
 
-			P8_19_ehrpwm_pin: pinmux_P8_19_ehrpwm_pin {
+			P8_19_ehrpwm_pin: P8_19_ehrpwm_pin {
 				pinctrl-single,pins = <0x20  0x4>; /* P8_19 | MODE 4 */
 			};
 
-			P9_22_ehrpwm_pin: pinmux_P9_22_ehrpwm_pin {
+			P9_22_ehrpwm_pin: P9_22_ehrpwm_pin {
 				pinctrl-single,pins = <0x150  0x3>; /* P9_22 | MODE 3 */
 			};
 
@@ -225,18 +225,18 @@
 		};
 	};
 
-	/* ----------- SSONIC ECHO ------------ */
+	/* ----------- usonic ECHO ------------ */
 	fragment@21 {
 		target = <&am33xx_pinmux>;
 		__overlay__ {
-			ssonic_echo_pins: pinmux_ssonic_echo_pins {
+			usonic_echo_pins: usonic_echo_pins {
 				status = "okay";
 				pinctrl-single,pins = <
 					/* stepper outputs */
-					0x19c 6  /* pr1_pru0_pru_r31_3,  P9_28, gpio3.17, mode6 in */
-					0x194 6  /* pr1_pru0_pru_r31_1,  P9_29, gpio3.15, mode6 in */
-					0x198 6  /* pr1_pru0_pru_r31_2,  P9_30, gpio3.16, mode6 in */
-					0x190 6  /* pr1_pru0_pru_r31_0,  P9_31, gpio3.14, mode6 in */
+					0x19c 0x36  /* pr1_pru0_pru_r31_3,  P9_28, gpio3.17, mode6 in */
+					0x194 0x36  /* pr1_pru0_pru_r31_1,  P9_29, gpio3.15, mode6 in */
+					0x198 0x36  /* pr1_pru0_pru_r31_2,  P9_30, gpio3.16, mode6 in */
+					0x190 0x36  /* pr1_pru0_pru_r31_0,  P9_31, gpio3.14, mode6 in */
 				>;
 			};
 		};
@@ -245,35 +245,35 @@
 	fragment@22 {
 		target = <&ocp>;
 		__overlay__ {
-			ssonic_echos {
-				compatible = "gpio-of-helper";
+			usonic_echos {
+				compatible = "bone-pinmux-helper";
 				status = "okay";
 				pinctrl-names = "default";
-				pinctrl-0 = <&ssonic_echo_pins>;
+				pinctrl-0 = <&usonic_echo_pins>;
 
-				ssonic1 {
-					gpio-name = "ssonic_echos:ssonic1";
+				usonic1 {
+					gpio-name = "usonic_echos:usonic1";
 					gpio = <&gpio4 17 0>;
 					input;
-					init-low;
+/*					init-low;*/
 				};
-				ssonic2 {
-					gpio-name = "ssonic_echos:ssonic2";
+				usonic2 {
+					gpio-name = "usonic_echos:usonic2";
 					gpio = <&gpio4 15 0>;
 					input;
-					init-low;
+/*					init-low;*/
 				};
-				ssonic3 {
-					gpio-name = "ssonic_echos:ssonic3";
+				usonic3 {
+					gpio-name = "usonic_echos:usonic3";
 					gpio = <&gpio4 16 0>;
 					input;
-					init-low;
+/*					init-low;*/
 				};
-				ssonic4 {
-					gpio-name = "ssonic_echos:ssonic4";
+				usonic4 {
+					gpio-name = "usonic_echos:usonic4";
 					gpio = <&gpio4 14 0>;
 					input;
-					init-low;
+/*					init-low;*/
 				};
 			};
 		};
@@ -292,7 +292,7 @@
 		target = <&am33xx_pinmux>;
 		__overlay__ {
 
-			robot_dcmotor_pins: pinmux_robot_dcmotor_pins {
+			robot_dcmotor_pins: robot_dcmotor_pins {
 				status = "okay";
 				pinctrl-single,pins = <
 					/* sensor inputs with pull-downs */

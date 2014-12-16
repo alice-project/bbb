@@ -29,9 +29,9 @@ int start_motor(int m)
 {
     if(m==0)
     {
-        pwm_run(8,13);
+        pwm_run(motor_pin[0][4],motor_pin[0][5]);
     } else {
-        pwm_run(8,19);
+        pwm_run(motor_pin[1][4],motor_pin[1][5]);
     }
 
     return 0;
@@ -41,9 +41,9 @@ int stop_motor(int m)
 {
     if(m==0)
     {
-        pwm_stop(8,13);
+        pwm_stop(motor_pin[0][4],motor_pin[0][5]);
     } else {
-        pwm_stop(8,19);
+        pwm_stop(motor_pin[1][4],motor_pin[1][5]);
     }
 
     return 0;
@@ -59,6 +59,18 @@ int start_chassis()
 {
     start_motor(0);
     start_motor(1);
+}
+
+void motor_init()
+{
+    stop_chassis();
+    set_pin_high(motor_pin[0][0], motor_pin[0][1]);
+    set_pin_low(motor_pin[0][2], motor_pin[0][3]);
+    pwm_set_polarity(motor_pin[0][4], motor_pin[0][5], 1);
+
+    set_pin_high(motor_pin[1][0], motor_pin[1][1]);
+    set_pin_low(motor_pin[1][2], motor_pin[1][3]);
+    pwm_set_polarity(motor_pin[1][4], motor_pin[1][5], 1);
 }
 
 int parser_motion_cmd(struct s_base_motion *cmd)

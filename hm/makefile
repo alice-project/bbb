@@ -2,7 +2,7 @@ CROSS_COMPILE = arm-linux-gnueabihf-
 @CROSS_COMPILE =
 CC = $(CROSS_COMPILE)gcc
 @CFLAGS = -O -g2 -DDEBUG -DGPIO_USING_DTS
-CFLAGS = -O -g2 -DDEBUG
+CFLAGS = -O -g2 -mtune=cortex-a8 -march=armv7-a 
 LDLIBS = -lrt -L./ -lpthread -lprussdrv
 LDFLAGS =
 INC = -I ../pub/

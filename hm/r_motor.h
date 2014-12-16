@@ -5,6 +5,7 @@ int start_motor(int m);
 int stop_motor(int m);
 
 void motor_regist();
+void motor_init();
 
 int parser_motion_cmd(struct s_base_motion *cmd);
 

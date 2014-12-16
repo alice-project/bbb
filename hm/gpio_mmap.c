@@ -258,6 +258,7 @@ int gpio_get_dir(int connector, int pin)
 int set_pin_high(int connector, int pin)
 {
     int port = (connector == 8)?pin-1:pin-1+46;
+
     *((unsigned int *)(gpio_addr[gpio_bank[port]] + GPIO_SETDATAOUT_OFFSET)) = gpio_bitfield[port];
 
     return 0;
@@ -266,6 +267,7 @@ int set_pin_high(int connector, int pin)
 int set_pin_low(int connector, int pin)
 {
     int port = (connector == 8)?pin-1:pin-1+46;
+
     *((unsigned int *)(gpio_addr[gpio_bank[port]] + GPIO_CLEARDATAOUT_OFFSET)) = gpio_bitfield[port];
 
     return 0;
@@ -367,7 +369,8 @@ int gpio_init()
         }
     }
 
-/*    for (i = 0;i < 4;i++)
+  #ifdef DEBUG
+    for (i = 0;i < 4;i++)
     {
         printf("gpio_addr[%d]=%p\n", i, gpio_addr[i]);
         
@@ -385,7 +388,7 @@ int gpio_init()
         printf("GPIO_SETDATAOUT_OFFSET=0x%x\n\n", *(unsigned int *)(gpio_addr[i]+GPIO_SETDATAOUT_OFFSET));
 
     }
-*/
+  #endif
 
 //    print_all_dir();
 

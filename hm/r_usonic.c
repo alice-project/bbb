@@ -26,13 +26,13 @@ const int usonic_pin[MAX_USONIC][4] = {
 int usonic_regist()
 {
     regist_gpio(usonic_pin[0][0], usonic_pin[0][1], DIR_OUT);
-    regist_gpio(usonic_pin[0][2], usonic_pin[0][3], DIR_IN);
+//    regist_gpio(usonic_pin[0][2], usonic_pin[0][3], DIR_IN);
     regist_gpio(usonic_pin[1][0], usonic_pin[1][1], DIR_OUT);
-    regist_gpio(usonic_pin[1][2], usonic_pin[1][3], DIR_IN);
+//    regist_gpio(usonic_pin[1][2], usonic_pin[1][3], DIR_IN);
     regist_gpio(usonic_pin[2][0], usonic_pin[2][1], DIR_OUT);
-    regist_gpio(usonic_pin[2][2], usonic_pin[2][3], DIR_IN);
+//    regist_gpio(usonic_pin[2][2], usonic_pin[2][3], DIR_IN);
     regist_gpio(usonic_pin[3][0], usonic_pin[3][1], DIR_OUT);
-    regist_gpio(usonic_pin[3][2], usonic_pin[3][3], DIR_IN);
+//    regist_gpio(usonic_pin[3][2], usonic_pin[3][3], DIR_IN);
 
     return 0;
 }
@@ -56,7 +56,7 @@ static int PruInit ( unsigned short pruNum )
         return -1;
     }
 
-    distance = (unsigned int*) pru_mem;
+    distance = (unsigned int*) (pru_mem) + 1;
 
     // Flush the values in the PRU data memory locations
     distance[0] = 0x00;
@@ -73,41 +73,28 @@ int usonic_init()
     tpruss_intc_initdata pruss_intc_initdata = PRUSS_INTC_INITDATA;
 
     /* Initialize the PRU */
-    if(prussdrv_init () < 0)
-        return -1;
+    prussdrv_init();
+
+    /* Open PRU Interrupt */
+    ret = prussdrv_open(PRU_EVTOUT_0);
+    if (ret)
+    {
+        printf("prussdrv_open open failed\n");
+        return (ret);
+    }
+
+    /* Get the interrupt initialized */
+    prussdrv_pruintc_init(&pruss_intc_initdata);
 
     /* Initialize example */
-    printf("\tINFO: PRU Initializing ...\r\n");
     PruInit(0);
 
     /* Execute example on PRU */
-    printf("\tINFO: Executing hm pru0.....\r\n");
     prussdrv_exec_program (0, "./hm_pru0.bin");
-printf("aaaaaaaaaaaa\n");
     return(0);
     
 }
 
-
-void start_usonic_detect(int i)
-{
-  #ifdef DEBUG
-    printf("start detecting ......\n");
-  #endif
-    set_pin_high(usonic_pin[i][0], usonic_pin[i][1]);
-//    usleep(20);
-//    set_pin_low(usonic_pin[i][0], usonic_pin[i][1]);
-}
-
-void stop_usonic_detect(int i)
-{
-  #ifdef DEBUG
-//    printf("stop detecting!\n");
-  #endif
-
-    set_pin_low(usonic_pin[i][0], usonic_pin[i][1]);
-//    usonic_state[i] = USONIC_IDLE;
-}
 
 int usonic_sensor_scan(void *data)
 {
@@ -115,12 +102,12 @@ int usonic_sensor_scan(void *data)
     unsigned long ms_diff;
     int i;
 
-    printf("usonic Scanning...\n");
-
     for(i = 0;i < MAX_USONIC;i++)
     {
         if(distance != NULL)
             printf("USONIC%d: %d\n",i , distance[i]);
+else
+printf("distance[] is NULL\n");
     }
 
     return 0;
