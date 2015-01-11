@@ -39,9 +39,10 @@ struct s_base_light
 #define STOP_ACTION   1
 struct s_base_motion
 {
-    unsigned int side;
-    unsigned int action;
-    unsigned int dir;
+    unsigned int left_action;
+    unsigned int left_dir;
+    unsigned int right_action;
+    unsigned int right_dir;
 };
 
 struct s_base_pwm_duty

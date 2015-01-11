@@ -11,9 +11,9 @@ unsigned char pwm_name[255];
 /* initial configure for PWMs */
 struct pwm_exp hm_pwm[] = 
 {
-    {8, 13, "/sys/devices/ocp.3/left_wheel.13", 1500000, 20000000, 0},
-    {8, 19, "/sys/devices/ocp.3/right_wheel.14", 1500000, 20000000, 0},
-    {9, 22, "/sys/devices/ocp.3/servo_motor_pwm.15", 1500000, 20000000, 0},
+    {8, 13, "/sys/devices/ocp.3/left_wheel.12", 1500000, 20000000, 0},
+    {8, 19, "/sys/devices/ocp.3/right_wheel.13", 1500000, 20000000, 0},
+    {9, 22, "/sys/devices/ocp.3/servo_motor_pwm.14", 1500000, 20000000, 0},
 };
 
 int pwm_init()

@@ -77,9 +77,10 @@ int send_motion_command(struct s_base_motion *motion)
     common_cmd = (struct s_com *)cmd_buffer;
     common_cmd->code = BA_MOTION_CMD;
     motion_cmd = (struct s_base_motion *)(cmd_buffer + sizeof(struct s_com));
-    motion_cmd->side = motion->side;
-    motion_cmd->action = motion->action;
-    motion_cmd->dir = motion->dir;
+    motion_cmd->left_action = motion->left_action;
+    motion_cmd->left_dir = motion->left_dir;
+    motion_cmd->right_action = motion->right_action;
+    motion_cmd->right_dir = motion->right_dir;
     if(send(g_hms[g_hm_id-1].fd, cmd_buffer, BUFLEN, 0) >= 0)
     {
         BASE_LOG("OK!\n");

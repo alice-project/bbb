@@ -3,6 +3,9 @@
 #include <pthread.h>
 #include <unistd.h>
 
+#include "prussdrv.h"
+#include "pruss_intc_mapping.h"
+
 #include "pub.h"
 #include "common.h"
 #include "gpio.h"
@@ -18,6 +21,28 @@
 
 struct s_hm_state m_state;
 
+static int pru_init()
+{
+    unsigned int ret;
+    tpruss_intc_initdata pruss_intc_initdata = PRUSS_INTC_INITDATA;
+
+    /* Initialize the PRU */
+    prussdrv_init();
+
+    /* Open PRU Interrupt */
+    ret = prussdrv_open(PRU_EVTOUT_0);
+    if (ret)
+    {
+        printf("prussdrv_open open failed\n");
+        return (ret);
+    }
+
+    /* Get the interrupt initialized */
+    prussdrv_pruintc_init(&pruss_intc_initdata);
+
+    return 0;
+}
+
 int system_init() 
 {
     m_state.m_moving = 0;
@@ -30,6 +55,8 @@ int system_init()
     m_state.m_left_pwm = 0;
     m_state.m_right_pwm = 0;
     
+    pru_init();
+
     if(r_message_init() < 0)
         return -1;
 
@@ -38,7 +65,7 @@ int system_init()
 
 //    led_regist();
 
-    usonic_regist();
+//    usonic_regist();
     servo_regist();
     motor_regist();
 
@@ -73,7 +100,7 @@ int main(int argc, char *argv[])
 
 //    set_timer(0, R_TIMER_LOOP, 1000, led_blink, NULL);
 //    set_timer(R_MSG_TEST, R_TIMER_LOOP, 5000, hm_test, NULL);
-    // check the ssonic every 5 seconds.
+    set_timer(R_MSG_MOTOR_SPEED, R_TIMER_LOOP, 4000, my_motor_speed, NULL);
     set_timer(R_MSG_USONIC_SCAN, R_TIMER_LOOP, 5000, usonic_sensor_scan, NULL);
     set_timer(R_MSG_SERVO_0, R_TIMER_LOOP, 1000, servo_0_rotating, 0);
 

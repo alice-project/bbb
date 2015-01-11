@@ -21,6 +21,7 @@ enum {
 
 int usonic_sensor_scan(void *data);
 int usonic_regist();
+int usonic_init();
 
 #endif
 

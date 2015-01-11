@@ -29,20 +29,6 @@
 	exclusive-use =
 	/* state the resources this cape uses */
 
-	/* ------ usonic TRIGGER ------ */
-		"P8.7",		/* gpio2.2  gpio66 */
-		"P8.8",		/* gpio2.3  gpio67 */
-		"P8.9",		/* gpio2.5  gpio69 */
-		"P8.10",	/* gpio2.4  gpio68 */
-
-	/* ------ usonic ECHO ------ */
-		"P9.28",		/* gpio3.17  gpio113 */
-		"P9.29",		/* gpio3.15  gpio111 */
-		"P9.30",		/* gpio3.16  gpio112 */
-		"P9.31",    	/* gpio3.14  gpio110 */
-		"pru0",
-		"pruss",
-
 	/* ------ PWM ------ */
 		"P8.13",    /* EHRPWM2B */
 		"P8.19",    /* EHRPWM2A */
@@ -54,62 +40,24 @@
 	/* ------ DC MOTOR DIRECTION ------ */
 		"P9.11",    /* gpio0.30 */
 		"P9.12",    /* gpio1.28 */
-		"P9.13",    /* gpio2.31 */
-		"P9.14";    /* gpio1.18 */
+		"P9.13",    /* gpio0.31 */
+		"P9.14",    /* gpio1.18 */
 
+	/* ------ DC MOTOR Decoder ------ */
+        "P8.15",    /* pr1_pru0_pru_r31_15, leftside */
+        "P8.16",    /* pr1_pru0_pru_r31_14, leftside */
+        "P8.45",    /* pr1_pru1_pru_r31_0,  rightside */
+        "P8.46",    /* pr1_pru1_pru_r31_1,  rightside */
+		"pru0",
+		"pru1",
+		"pruss",
 
-	/* ----------- usonic TRIGGER ------------ */
-
-	fragment@0 {
-		target = <&am33xx_pinmux>;
-		__overlay__ {
-			usonic_trigger_enable_pins: usonic_trigger_pins {
-				pinctrl-single,pins = <
-					0x90 0x07  /*  P8-7 */
-					0x94 0x07  /*  P8-8 */
-					0x9c 0x07  /*  P8-9 */
-					0x98 0x07  /*  P8-10 */
-				>;
-			};
-		};
-	};
-
-	fragment@1 {
-		target = <&ocp>;
-		__overlay__ {
-			usonic_trigger_enables {
-				compatible = "gpio-of-helper";
-				status = "okay";
-				pinctrl-names = "default";
-				pinctrl-0 = <&usonic_trigger_enable_pins>;
-
-				usonic1_trigger {
-					gpio-name = "robot:usonic1_trigger";
-					gpio = <&gpio3 2 0>;
-					output;
-					init-low;
-				};
-				usonic2_trigger {
-					gpio-name = "robot:usonic2_trigger";
-					gpio = <&gpio3 3 0>;
-					output;
-					init-low;
-				};
-				usonic3_trigger {
-					gpio-name = "robot:usonic3_trigger";
-					gpio = <&gpio3 5 0>;
-					output;
-					init-low;
-				};
-				usonic4_trigger {
-					gpio-name = "robot:usonic4_trigger";
-					gpio = <&gpio3 4 0>;
-					output;
-					init-low;
-				};
-			};
-		};
-	};
+	/* ------ MPU6050 ------ */
+		/* the pin header uses */
+		"P9.18",	/* i2c1_sda */
+		"P9.17",	/* i2c1_scl */
+		/* the hardware ip uses */
+		"i2c1";
 
 	/* ----------- PWM ------------ */
 	fragment@10 {
@@ -225,83 +173,119 @@
 		};
 	};
 
-	/* ----------- usonic ECHO ------------ */
-	fragment@21 {
-		target = <&am33xx_pinmux>;
-		__overlay__ {
-			usonic_echo_pins: usonic_echo_pins {
-				status = "okay";
-				pinctrl-single,pins = <
-					/* stepper outputs */
-					0x19c 0x36  /* pr1_pru0_pru_r31_3,  P9_28, gpio3.17, mode6 in */
-					0x194 0x36  /* pr1_pru0_pru_r31_1,  P9_29, gpio3.15, mode6 in */
-					0x198 0x36  /* pr1_pru0_pru_r31_2,  P9_30, gpio3.16, mode6 in */
-					0x190 0x36  /* pr1_pru0_pru_r31_0,  P9_31, gpio3.14, mode6 in */
-				>;
-			};
-		};
-	};
-
-	fragment@22 {
-		target = <&ocp>;
-		__overlay__ {
-			usonic_echos {
-				compatible = "bone-pinmux-helper";
-				status = "okay";
-				pinctrl-names = "default";
-				pinctrl-0 = <&usonic_echo_pins>;
-
-				usonic1 {
-					gpio-name = "usonic_echos:usonic1";
-					gpio = <&gpio4 17 0>;
-					input;
-/*					init-low;*/
-				};
-				usonic2 {
-					gpio-name = "usonic_echos:usonic2";
-					gpio = <&gpio4 15 0>;
-					input;
-/*					init-low;*/
-				};
-				usonic3 {
-					gpio-name = "usonic_echos:usonic3";
-					gpio = <&gpio4 16 0>;
-					input;
-/*					init-low;*/
-				};
-				usonic4 {
-					gpio-name = "usonic_echos:usonic4";
-					gpio = <&gpio4 14 0>;
-					input;
-/*					init-low;*/
-				};
-			};
-		};
-	};
-
-	fragment@23 {
-		target = <&pruss>;
-		__overlay__ {
-			status = "okay";
-		};
-	};
-
 	/* ----------- DC MOTOR DIRECTION ------------ */
-
-	fragment@31 {
+	fragment@30 {
 		target = <&am33xx_pinmux>;
 		__overlay__ {
 
 			robot_dcmotor_pins: robot_dcmotor_pins {
 				status = "okay";
 				pinctrl-single,pins = <
-					/* sensor inputs with pull-downs */
-					0x70 0x07   /* P9_11, gpio0.30  */
-					0x78 0x07   /* P9_12, gpio1.28  */
-					0x74 0x07   /* P9_13, gpio0.31  */
-					0x48 0x07   /* P9_14, gpio1.18  */
+					0x70 0x37   /* P9_11, gpio0.30  */
+					0x78 0x37   /* P9_12, gpio1.28  */
+					0x74 0x37   /* P9_13, gpio0.31  */
+					0x48 0x37   /* P9_14, gpio1.18  */
 				>;
 			};
+		};
+	};
+
+	/* ----------- DC MOTOR Decoder ------------ */
+	fragment@40 {
+		target = <&am33xx_pinmux>;
+		__overlay__ {
+			motor_decoder_pins: motor_decoder_pins {
+				status = "okay";
+				pinctrl-single,pins = <
+					0x3c 0x36  /* pr1_pru0_pru_r31_15, leftside, P8_15, mode6 in */
+					0x38 0x36  /* pr1_pru0_pru_r31_14, leftside, P8_16, mode6 in */
+					0xa0 0x36  /* pr1_pru1_pru_r31_0, P8_45, mode6 in */
+					0xa4 0x36  /* pr1_pru1_pru_r31_1, P8_46, mode6 in */
+				>;
+			};
+		};
+	};
+
+	fragment@41 {
+		target = <&ocp>;
+		__overlay__ {
+			motor_des {
+				compatible = "bone-pinmux-helper";
+				status = "okay";
+				pinctrl-names = "default";
+				pinctrl-0 = <&motor_decoder_pins>;
+
+				decoder1 {
+					gpio-name = "motor_decoders:decoder1";
+					gpio = <&gpio2 15 0>;
+					input;
+					init-low;
+				};
+				decoder2 {
+					gpio-name = "motor_decoders:decoder2";
+					gpio = <&gpio2 14 0>;
+					input;
+					init-low;
+				};
+				decoder3 {
+					gpio-name = "motor_decoders:decoder3";
+					gpio = <&gpio3 6 0>;
+					input;
+					init-low;
+				};
+				decoder4 {
+					gpio-name = "motor_decoders:decoder4";
+					gpio = <&gpio3 7 0>;
+					input;
+					init-low;
+				};
+			};
+		};
+	};
+
+	fragment@42 {
+		target = <&pruss>;
+		__overlay__ {
+			status = "okay";
+		};
+	};
+
+	/* -------------------------- MPU6050 --------------------- */
+	fragment@50 {
+		target = <&am33xx_pinmux>;
+		__overlay__ {
+			bb_i2c1_pins: pinmux_bb_i2c1_pins {
+				pinctrl-single,pins = <
+					0x158 0x72	/* spi0_d1.i2c1_sda, SLEWCTRL_SLOW | INPUT_PULLUP | MODE2 */
+					0x15c 0x72	/* spi0_cs0.i2c1_scl, SLEWCTRL_SLOW | INPUT_PULLUP | MODE2 */
+				>;
+			};
+		};
+	};
+
+	fragment@51 {
+		target = <&i2c1>;	/* i2c1 is numbered correctly */
+		__overlay__ {
+			status = "okay";
+			pinctrl-names = "default";
+			pinctrl-0 = <&bb_i2c1_pins>;
+
+			/* this is the configuration part */
+			clock-frequency = <100000>;
+
+			#address-cells = <1>;
+			#size-cells = <0>;
+
+			/* add any i2c devices on the bus here */
+
+			// commented out example of a touchscreen (taken from BB-BONE-LCD7-01-00A4) */
+			// maxtouch@4a {
+			//	compatible = "mXT224";
+			//	reg = <0x4a>;
+			//	interrupt-parent = <&gpio4>;
+			//	interrupts = <19 0x0>;
+			//	atmel,irq-gpio = <&gpio4 19 0>;
+			// };
 		};
 	};
 

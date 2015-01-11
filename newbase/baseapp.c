@@ -129,17 +129,25 @@ void on_button_motion_cmd_clicked(GtkWidget *button, gpointer data)
     struct s_base_motion motion;
 
     if(gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(rb_left_forward))) {
-        motion.side = LEFT_SIDE;
-        motion.action = START_ACTION;
-        motion.dir = POSITIVE_DIR;
-    } else if(gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(rb_left_stop))){
-        motion.side = LEFT_SIDE;
-        motion.action = STOP_ACTION;
-        motion.dir = POSITIVE_DIR;
-    } else {
-        motion.side = LEFT_SIDE;
-        motion.action = START_ACTION;
-        motion.dir = NEGATIVE_DIR;
+        motion.left_action = START_ACTION;
+        motion.left_dir = POSITIVE_DIR;
+    } else if(gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(rb_left_stop))) {
+        motion.left_action = STOP_ACTION;
+        motion.left_dir = POSITIVE_DIR;
+    } else if(gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(rb_left_backward))) {
+        motion.left_action = START_ACTION;
+        motion.left_dir = NEGATIVE_DIR;
+    }
+
+    if(gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(rb_right_forward))) {
+        motion.right_action = START_ACTION;
+        motion.right_dir = POSITIVE_DIR;
+    } else if(gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(rb_right_stop))){
+        motion.right_action = STOP_ACTION;
+        motion.right_dir = POSITIVE_DIR;
+    } else if(gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(rb_right_backward))){
+        motion.right_action = START_ACTION;
+        motion.right_dir = NEGATIVE_DIR;
     }
 
     send_motion_command(&motion);

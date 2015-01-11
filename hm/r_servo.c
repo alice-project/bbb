@@ -54,7 +54,7 @@ int parser_servo_cmd(struct s_base_motion *cmd)
 {
     if(cmd == NULL)  return -1;
 
-    if(cmd->action == START_ACTION) {
+    if(cmd->left_action == START_ACTION) {
         printf("Start servo!\n");
         set_pin_high(servo_pin[0][0], servo_pin[0][1]);
     } else {
@@ -70,7 +70,7 @@ int servo_0_rotating(void *data)
     double angle;
     int duty_cycle;
     int period;
-
+printf("servo_0_rotating\n");
     period = pwm_get_period(servo_pin[0][0], servo_pin[0][1]);
     duty_cycle = pwm_get_duty(servo_pin[0][0], servo_pin[0][1]);
     angle = SG90_DUTY_TO_ANGLE(duty_cycle);

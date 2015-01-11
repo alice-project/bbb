@@ -7,6 +7,7 @@
 
 struct r_queue {
 	struct r_queue *next;
+	struct r_queue *before;
 	void   *data;
 };
 
@@ -24,11 +25,6 @@ static inline void queue_append(struct r_queue *queue, struct r_queue *new_link)
 {
 	queue->next = new_link;
 	new_link->next = NULL;
-}
-
-static inline void queue_prepend(struct r_queue *queue, struct r_queue *new_link)
-{
-	new_link->next = queue;
 }
 
 static inline struct r_queue* queue_remove_node(struct r_queue **link)

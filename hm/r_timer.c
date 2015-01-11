@@ -3,39 +3,36 @@
 #include <syslog.h>
 
 #include "r_timer.h"
-#include "r_queue.h"
+#include "r_list.h"
 #include "r_message.h"
 
-timer_queue *r_tm_head;
+timer_queue r_tm_head;
 
 int r_timer_init()
 {
-    queue_init(r_tm_head);
+    list_init(&r_tm_head);
 
     return 0;
 }
 
 int insert_timer(timer_queue *node)
 {
-	struct r_queue *queue;
+	struct r_list *queue;
 	struct r_timer *t1, *t2;
 	
-	queue = r_tm_head;
-	while(queue != NULL)
+	queue = r_tm_head.next;
+	while(queue != &r_tm_head)
 	{
 		t1 = (struct r_timer *)queue->data;
 		t2 = (struct r_timer *)node->data;
-		if((t1->s_start + t1->ms_start) > (t2->s_start + t2->ms_start))
+		if((t1->s_start + (t1->ms_start + t1->tm_val)/1000000) > (t2->s_start + (t2->ms_start + t2->tm_val)/1000000))
 		{
 			break;
 		}
 		queue = queue->next;
 	}
-	queue_prepend(r_tm_head, node);
-	if(queue == r_tm_head)
-	{
-		r_tm_head = node;  /* insert at the beginning */
-	}
+	list_insert(queue, node);
+
 	return 0;
 }
 
@@ -53,7 +50,7 @@ int free_timer(timer_queue *node)
 int set_timer(u_int32 msg_id, u_int32 type, u_int32 msec, timer_func f, void *data)
 {
 	struct r_timer *tm, *t;
-	struct r_queue *node;
+	struct r_list *node;
 	struct timeval current;
 
 	if((type != R_TIMER_ONCE) && (type != R_TIMER_LOOP))
@@ -76,7 +73,7 @@ int set_timer(u_int32 msg_id, u_int32 type, u_int32 msec, timer_func f, void *da
 	tm->func     = f;
 	tm->data = data;
 
-	node = (struct r_queue *)malloc(sizeof(struct r_queue));
+	node = (struct r_list *)malloc(sizeof(struct r_list));
 	if(node == NULL)
 	{
 		syslog(LOG_EMERG, "Timer malloc failed (msg_id = 0x%lx)\n", msg_id);
@@ -93,22 +90,24 @@ int set_timer(u_int32 msg_id, u_int32 type, u_int32 msec, timer_func f, void *da
 
 void *timer_scan_thread(void *data)
 {
-	struct r_queue *node;
+	struct r_list *node;
+	struct r_list *header;
 	struct r_timer *tm, *t;
 	struct timeval current;
 
 	while(1)
 	{
-		if(r_tm_head == NULL)
+        header = r_tm_head.next;
+		if(list_is_empty(header))
 		{
 			usleep(10);
 			continue;
 		}
 		gettimeofday(&current, NULL);
-		t = (struct r_timer *)r_tm_head->data;
-		while((r_tm_head != NULL) && ((t->s_start + (t->ms_start + t->tm_val)/1000000) < current.tv_sec + current.tv_usec/1000000))
+		t = header->data;
+		if((header != NULL) && ((t->s_start + (t->ms_start + t->tm_val)/1000000) < current.tv_sec + current.tv_usec/1000000))
 		{
-			node = queue_remove_node(&r_tm_head);
+			node = list_remove_node(&header);
 			tm = (struct r_timer *)(node->data);
 			if(tm->func != NULL)
 			{
@@ -124,8 +123,6 @@ void *timer_scan_thread(void *data)
 					free_timer(node);
 				}
 			}
-			usleep(1);
-			gettimeofday(&current, NULL);
 		}
 		usleep(10);
 	}

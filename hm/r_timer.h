@@ -21,7 +21,7 @@ struct r_timer {
 	void* data;
 };
 
-typedef struct r_queue timer_queue;
+typedef struct r_list timer_queue;
 
 int r_timer_init();
 void *timer_scan_thread(void *);
