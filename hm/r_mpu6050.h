@@ -399,5 +399,6 @@ THE SOFTWARE.
 // note: DMP code memory blocks defined at end of header file
 
 void mpu6050_init();
+int mpu6050_detect(void *data);
 
 #endif /* __R_MPU6050_H__ */

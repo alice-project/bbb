@@ -34,66 +34,13 @@
 #define CTPPR_1         0x2202C
 
 
-// USONIC trigger and echo pins
-// all usonic triggers are mounted on GPIO2
-#define USONIC_TRIGGER_ADDR  0x481ac000
-// all usonic echos are mounted on GPIO3
-#define USONIC_ECHO_ADDR     0x481ae000
-
-#define USONIC1_TRIGGER_BIT  2
-#define USONIC2_TRIGGER_BIT  3
-#define USONIC3_TRIGGER_BIT  5
-#define USONIC4_TRIGGER_BIT  4
-#define USONIC1_ECHO_BIT     17
-#define USONIC2_ECHO_BIT     15
-#define USONIC3_ECHO_BIT     16
-#define USONIC4_ECHO_BIT     14
-
-
-
 #define MOTOR_DECODER_ADDR   0x4804c000
-#define LEFT_MOTOR_DECODER_POWER_BIT    15
-#define RIGHT_MOTOR_DECODER_POWER_BIT   14
-#define LEFT_MOTOR_DECODER_COUNT_BIT1   2
-#define LEFT_MOTOR_DECODER_COUNT_BIT2   3
-#define RIGHT_MOTOR_DECODER_COUNT_BIT1  0
-#define RIGHT_MOTOR_DECODER_COUNT_BIT2  1
+#define LEFT_COUNT_BIT   14
+#define RIGHT_COUNT_BIT  15
 
 #define GPIO_DATAIN          0x138
 #define GPIO_CLEARDATAOUT    0x190
 #define GPIO_SETDATAOUT      0x194
-
-
-.macro  LD32
-.mparam dst,src
-    LBBO    dst,src,#0x00,4
-.endm
-
-.macro  LD16
-.mparam dst,src
-    LBBO    dst,src,#0x00,2
-.endm
-
-.macro  LD8
-.mparam dst,src
-    LBBO    dst,src,#0x00,1
-.endm
-
-.macro ST32
-.mparam src,dst
-    SBBO    src,dst,#0x00,4
-.endm
-
-.macro ST16
-.mparam src,dst
-    SBBO    src,dst,#0x00,2
-.endm
-
-.macro ST8
-.mparam src,dst
-    SBBO    src,dst,#0x00,1
-.endm
-
 
 .macro DELAY_100
 MOV r10, 0
@@ -102,88 +49,31 @@ DELAY:
     QBNE DELAY, r10, 0xe0
 .endm
 
-.macro USONIC_PROC
-.mparam trigger_bit, echo_bit, usonic_num, pru_bit
-    MOV r0, 1<<trigger_bit
-    MOV r1, USONIC_TRIGGER_ADDR | GPIO_SETDATAOUT
-    MOV r2, USONIC_TRIGGER_ADDR | GPIO_CLEARDATAOUT
-    MOV r3, CONTROL_1
-    MOV r4, 0
-    SBBO r4, r3, 0xC, 4  // clear the cycle counter first
-
-    MOV r5, 0xFFFFFFF
-    SBBO r0, r1, 0, 4  // set trigger high
-WAIT_FOR_ECHO_HIGH:
-    LBBO r6, r3, 0xC, 4  // get the cycle
-    QBLE FAR_DISTANCE, r6, r5    // to far to be detected
-    QBBC WAIT_FOR_ECHO_HIGH, r31, pru_bit
-    MOV r8, 0
-    SBBO r8, r3, 0xC, 4  // clear the cycle counter
-
-    SBBO r0, r2, 0, 4  // set trigger low
-
-// cycle to distance:
-// counter/200000000*170M=counter/2000000*170cm
-// 1m is about 0x11F396 cycles
-    MOV r7, 0x11F396
-WAIT_FOR_ECHO_LOW:
-    LBBO r8, r3, 0xC, 4  // get the cycle
-    QBLE FAR_DISTANCE, r8, r7    // to far to be detected
-    QBBS WAIT_FOR_ECHO_LOW, r31, pru_bit
-    LBBO r8, r3, 0xC, 4  // read the cycle counter
-
-STORE_RESULT:
-    //Store result in into memory using constant table
-    MOV r7, usonic_num
-    LSL r7, r7, 2  // every usonic result need 4 bytes
-    SBCO r8, CONST_PRUDRAM, r7, 4
-    JMP ENDM
-
-FAR_DISTANCE:
-    MOV r8, 0xFFFFFFFF
-    MOV r7, usonic_num
-    LSL r7, r7, 2  // every usonic result need 4 bytes
-    SBCO r8, CONST_PRUDRAM, r7, 4
-
-ENDM:
-
-.endm
-
 
 /*************** PRU0 ***********************/
-
 .macro RIGHT_MOTOR_SPEED_PROC
-.mparam power_bit, decoder_bit1, decoder_bit2, decoder_num, pru_bit
-    MOV r0, 1<<power_bit
+.mparam pru_bit
     MOV r1, MOTOR_DECODER_ADDR | GPIO_SETDATAOUT
     MOV r2, MOTOR_DECODER_ADDR | GPIO_CLEARDATAOUT
     MOV r3, CONTROL_0
     MOV r4, 334
     MOV r5, 0
-    MOV r6, decoder_num
-    LSL r6, r6, 2  // every usonic result need 4 bytes
-
-    SBCO r5, CONST_PRUDRAM, r6, 4  // clear result
 
     SBBO r5, r3, 0xC, 4  // clear the cycle counter first
-    SBBO r0, r1, 0, 4  // set decoder power high
 
 WAIT_FOR_PULSE:
-DELAY_100
-LBBO r7, r3, 0xC, 4  // read the cycle counter
-JMP STORE_RESULT
     WBS r31, pru_bit
+    SBBO r5, r3, 0xC, 4  // clear the cycle counter first
+    LBBO r6, r3, 0xC, 4  // read the cycle counter
     WBC r31, pru_bit
     ADD r5, r5, 1
     QBGT WAIT_FOR_PULSE, r5, r4
 
-    LBBO r7, r3, 0xC, 4  // read the cycle counter
-
-    SBBO r0, r2, 0, 4  // close decoder
+    LBBO r6, r3, 0xC, 4  // read the cycle counter
 
 STORE_RESULT:
     //Store result in into memory using constant table
-    SBCO r7, CONST_PRUDRAM, r6, 4
+    SBCO r6, CONST_PRUDRAM, 4, 4
     JMP ENDM
 
 ENDM:
@@ -194,39 +84,32 @@ ENDM:
 
 
 /*************** PRU1 ***********************/
-
 .macro LEFT_MOTOR_SPEED_PROC
-.mparam power_bit, decoder_bit1, decoder_bit2, decoder_num, pru_bit
-    MOV r0, 1<<power_bit
+.mparam pru_bit
+//    MOV r0, 1<<power_bit
     MOV r1, MOTOR_DECODER_ADDR | GPIO_SETDATAOUT
     MOV r2, MOTOR_DECODER_ADDR | GPIO_CLEARDATAOUT
     MOV r3, CONTROL_1
     MOV r4, 334
     MOV r5, 0
-    MOV r6, decoder_num
-    LSL r6, r6, 2  // every usonic result need 4 bytes
-
-    SBCO r5, CONST_PRUDRAM, r6, 4  // clear result
 
     SBBO r5, r3, 0xC, 4  // clear the cycle counter first
     SBBO r0, r1, 0, 4  // set decoder power high
 
 WAIT_FOR_PULSE:
-DELAY_100
-LBBO r7, r3, 0xC, 4  // read the cycle counter
-JMP STORE_RESULT
     WBS r31, pru_bit
+    SBBO r5, r3, 0xC, 4  // clear the cycle counter first
+    LBBO r6, r3, 0xC, 4  // read the cycle counter
     WBC r31, pru_bit
     ADD r5, r5, 1
     QBGT WAIT_FOR_PULSE, r5, r4
 
-    LBBO r7, r3, 0xC, 4  // read the cycle counter
 
-    SBBO r0, r2, 0, 4  // close decoder
+    LBBO r6, r3, 0xC, 4  // read the cycle counter
 
 STORE_RESULT:
     //Store result in into memory using constant table
-    SBCO r7, CONST_PRUDRAM, r6, 4
+    SBCO r6, CONST_PRUDRAM, 4, 4
     JMP ENDM
 
 ENDM:

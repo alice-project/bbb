@@ -41,7 +41,9 @@ void servo_init()
 {
     pwm_stop(servo_pin[0][0], servo_pin[0][1]);
     pwm_set_period(servo_pin[0][0], servo_pin[0][1], SG90_STANDARD_PERIOD);
+    pwm_set_polarity(servo_pin[0][0], servo_pin[0][1], 1);
     pwm_set_duty_cycle(servo_pin[0][0], servo_pin[0][1], SG90_ANGLE_TO_DUTY(0));  /* keep in the middle */
+    start_servo();
 }
 
 int start_servo()
@@ -70,7 +72,6 @@ int servo_0_rotating(void *data)
     double angle;
     int duty_cycle;
     int period;
-printf("servo_0_rotating\n");
     period = pwm_get_period(servo_pin[0][0], servo_pin[0][1]);
     duty_cycle = pwm_get_duty(servo_pin[0][0], servo_pin[0][1]);
     angle = SG90_DUTY_TO_ANGLE(duty_cycle);
@@ -86,8 +87,10 @@ printf("servo_0_rotating\n");
     }
 
     if(servo_rotate_direc == ROTATE_POSITIVE) {
+//printf("Servo rotate to %f\n", angle+SG90_ROTATE_STEP);
         servo_rotate_to(servo_pin[0][0], servo_pin[0][1], angle+SG90_ROTATE_STEP);
     } else {
+//printf("Servo rotate to %f\n", angle+SG90_ROTATE_STEP);
         servo_rotate_to(servo_pin[0][0], servo_pin[0][1], angle-SG90_ROTATE_STEP);
     }
 }

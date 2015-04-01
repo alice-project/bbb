@@ -10,7 +10,8 @@
 #include "gpio.h"
 #include "r_usonic.h"
 
-static unsigned int *speed = NULL;
+static unsigned int *left_speed = NULL;
+static unsigned int *right_speed = NULL;
 
 const int motor_pin[][6] = {
     /* connector, PIN */
@@ -43,8 +44,10 @@ int start_motor(int m)
     if(m==0)
     {
         pwm_run(motor_pin[0][4],motor_pin[0][5]);
+        pwm_set_polarity(motor_pin[0][4], motor_pin[0][5], 1);
     } else {
         pwm_run(motor_pin[1][4],motor_pin[1][5]);
+        pwm_set_polarity(motor_pin[1][4], motor_pin[1][5], 1);
     }
 
     return 0;
@@ -76,58 +79,67 @@ int start_chassis()
 
 
 static void *pru_mem = NULL;
-static int Motor_PruInit()
+static int motor_pru_init()
 {
-    prussdrv_map_prumem (PRUSS0_PRU1_DATARAM, &pru_mem);
+    unsigned int ret;
+    tpruss_intc_initdata pruss_intc_initdata = PRUSS_INTC_INITDATA;
 
+    /* Initialize the PRU */
+    prussdrv_init();
+
+    /* Open PRU Interrupt */
+    ret = prussdrv_open(PRU_EVTOUT_0);
+    if (ret)
+    {
+        printf("prussdrv_open open 0 failed\n");
+        return (ret);
+    }
+
+    /* Open PRU Interrupt */
+    ret = prussdrv_open(PRU_EVTOUT_1);
+    if (ret)
+    {
+        printf("prussdrv_open open 0 failed\n");
+        return (ret);
+    }
+
+    /* Get the interrupt initialized */
+    prussdrv_pruintc_init(&pruss_intc_initdata);
+
+    prussdrv_map_prumem (PRUSS0_PRU0_DATARAM, &pru_mem);
     if(pru_mem == NULL)
     {
+        printf("ERR, %d\n", __LINE__);
+        return -1;
+    }
+    right_speed = (unsigned int*) (pru_mem)+1;
+
+    prussdrv_map_prumem (PRUSS0_PRU1_DATARAM, &pru_mem);
+    if(pru_mem == NULL)
+    {
+        printf("ERR, %d\n", __LINE__);
         return -1;
     }
 
-    speed = (unsigned int*) (pru_mem)+1;
-
-    // Flush the values in the PRU data memory locations
-    speed[0] = 0x00;
-    speed[1] = 0x00;
+    left_speed = (unsigned int*) (pru_mem)+1;
 
 int i;
-for(i=0;i<32;i++)
-speed[i]=0;
+for(i=0;i<32;i++) {
+left_speed[i]=0;
+right_speed[i]=0;
+}
 
     /* Execute example on PRU */
-    prussdrv_exec_program (0, "./hm_pru1.bin");
+    prussdrv_exec_program (0, "./hm_pru0.bin");
+    prussdrv_exec_program (1, "./hm_pru1.bin");
     
     return(0);
 }
 
-static int motor_pruinit ()
-{
-    prussdrv_map_prumem (PRUSS0_PRU1_DATARAM, &pru_mem);
-    if(pru_mem == NULL)
-    {
-        return -1;
-    }
-
-    speed = (unsigned int*) (pru_mem) + 1;
-
-    // Flush the values in the PRU data memory locations
-    speed[0] = 0x00;
-    speed[1] = 0x00;
-
-int i;
-for(i=0;i<32;i++)
-speed[i]=0;
-
-    return(0);
-}
-
-
-
 void motor_init()
 {
     printf("motor init!\n");
-    Motor_PruInit();
+    motor_pru_init();
 
     stop_chassis();
     set_pin_high(motor_pin[0][0], motor_pin[0][1]);
@@ -143,51 +155,74 @@ int parser_motion_cmd(struct s_base_motion *cmd)
 {
     if(cmd == NULL)  return -1;
 
-    if((cmd->left_action == START_ACTION) && (cmd->right_action == START_ACTION))
+    if(cmd->left_action == START_ACTION)
     {
         start_chassis();
-        if(cmd->left_dir == POSITIVE_DIR)
+        if(cmd->left_data == POSITIVE_DIR)
         {
             set_pin_high(motor_pin[0][0], motor_pin[0][1]);
             set_pin_low(motor_pin[0][2], motor_pin[0][3]);
         }
-        else if(cmd->left_dir == NEGATIVE_DIR)
+        else if(cmd->left_data == NEGATIVE_DIR)
         {
             set_pin_low(motor_pin[0][0], motor_pin[0][1]);
             set_pin_high(motor_pin[0][2], motor_pin[0][3]);
         }
+    }
+    if(cmd->left_action == SET_DUTY_ACTION)
+    {
+        if(pwm_set_duty(motor_pin[0][4], motor_pin[0][5], cmd->left_data) < 0)
+            printf("FAILED\n");
+    }
+    if(cmd->left_action == STOP_ACTION)
+    {
+        stop_motor(0);
+    }
 
-        if(cmd->right_dir == POSITIVE_DIR)
+    if(cmd->right_action == START_ACTION)
+    {
+        start_chassis();
+        if(cmd->right_data == POSITIVE_DIR)
         {
             set_pin_high(motor_pin[1][0], motor_pin[1][1]);
             set_pin_low(motor_pin[1][2], motor_pin[1][3]);
         }
-        else if(cmd->right_dir == NEGATIVE_DIR)
+        else if(cmd->right_data == NEGATIVE_DIR)
         {
             set_pin_low(motor_pin[1][0], motor_pin[1][1]);
             set_pin_high(motor_pin[1][2], motor_pin[1][3]);
         }
     }
-    else
+    if(cmd->right_action == SET_DUTY_ACTION)
     {
-        stop_chassis();
+        if(pwm_set_duty(motor_pin[1][4], motor_pin[1][5], cmd->right_data) < 0)
+            printf("FAILED!\n");
     }
+    if(cmd->right_action == STOP_ACTION)
+    {
+        stop_motor(1);
+    }
+
     return 0;
 }
 
 int my_motor_speed(void *data)
 {
     int i;
-/*    printf("get_motor_speed...\n");
+    printf("get_motor_left_speed...\n");
     for(i = 0;i < 32;i++)
     {
-        if(speed != NULL)
-            printf("SPEED: %d  ", speed[i]);
-        else
-            printf("NULL  ");
+        if((left_speed != NULL) && (left_speed[i] != 0))
+        {
+            printf("left[%d]: 0x%x  \n", i, left_speed[i]);
+        }
+        if((right_speed != NULL) && (right_speed[i] != 0))
+        {
+            printf("right[%d]: 0x%x  \n", i, right_speed[i]);
+        }
     }
     printf("\n");
-*/
+
     return 0;
 }
 

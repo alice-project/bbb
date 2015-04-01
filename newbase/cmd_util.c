@@ -47,7 +47,7 @@ int send_light_command(unsigned int cmds)
     struct s_com *common_cmd;
     struct s_base_light *light_cmd;
 
-    BASE_LOG("Light Command is sending ...");
+    printf("Light Command is sending ...");
 
     memset(cmd_buffer, 0, sizeof(cmd_buffer));
     common_cmd = (struct s_com *)cmd_buffer;
@@ -78,9 +78,9 @@ int send_motion_command(struct s_base_motion *motion)
     common_cmd->code = BA_MOTION_CMD;
     motion_cmd = (struct s_base_motion *)(cmd_buffer + sizeof(struct s_com));
     motion_cmd->left_action = motion->left_action;
-    motion_cmd->left_dir = motion->left_dir;
+    motion_cmd->left_data = motion->left_data;
     motion_cmd->right_action = motion->right_action;
-    motion_cmd->right_dir = motion->right_dir;
+    motion_cmd->right_data = motion->right_data;
     if(send(g_hms[g_hm_id-1].fd, cmd_buffer, BUFLEN, 0) >= 0)
     {
         BASE_LOG("OK!\n");
@@ -167,4 +167,5 @@ int send_pwm_freq_command(int change)
 
     return 0;
 }
+
 

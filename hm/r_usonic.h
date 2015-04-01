@@ -19,7 +19,7 @@ enum {
     USONIC_FIN,
 };
 
-int usonic_sensor_scan(void *data);
+int usonic_detect(void *data);
 int usonic_regist();
 int usonic_init();
 

@@ -35,14 +35,16 @@ struct s_base_light
 #define POSITIVE_DIR  0
 #define NEGATIVE_DIR  1
 
-#define START_ACTION  0
-#define STOP_ACTION   1
+#define NULL_ACTION       0
+#define START_ACTION      1
+#define STOP_ACTION       2
+#define SET_DUTY_ACTION   3
 struct s_base_motion
 {
     unsigned int left_action;
-    unsigned int left_dir;
+    unsigned int left_data;
     unsigned int right_action;
-    unsigned int right_dir;
+    unsigned int right_data;
 };
 
 struct s_base_pwm_duty

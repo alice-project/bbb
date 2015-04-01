@@ -85,9 +85,8 @@ int pwm_set_duty(int connector, int pin, unsigned int duty)
     if(fp == NULL)
         return -1;
 
-    duty_cycle = hm_pwm[i].period * duty;
+    duty_cycle = hm_pwm[i].period * (100-duty)/100;
     hm_pwm[i].duty = duty_cycle;
-
     sprintf(buffer, "%lu", duty_cycle);
     fputs(buffer, fp);
     
@@ -119,7 +118,7 @@ int pwm_set_duty_cycle(int connector, int pin, unsigned int duty)
 
     hm_pwm[i].duty = duty;
 
-    sprintf(buffer, "%lu", duty);
+    sprintf(buffer, "%lu\n", duty);
     fputs(buffer, fp);
     
     fclose(fp);

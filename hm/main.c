@@ -2,6 +2,7 @@
 #include <stdio.h>
 #include <pthread.h>
 #include <unistd.h>
+#include <syslog.h>
 
 #include "prussdrv.h"
 #include "pruss_intc_mapping.h"
@@ -18,30 +19,10 @@
 #include "r_commu.h"
 #include "r_test.h"
 #include "r_servo.h"
+#include "r_mpu6050.h"
 
 struct s_hm_state m_state;
-
-static int pru_init()
-{
-    unsigned int ret;
-    tpruss_intc_initdata pruss_intc_initdata = PRUSS_INTC_INITDATA;
-
-    /* Initialize the PRU */
-    prussdrv_init();
-
-    /* Open PRU Interrupt */
-    ret = prussdrv_open(PRU_EVTOUT_0);
-    if (ret)
-    {
-        printf("prussdrv_open open failed\n");
-        return (ret);
-    }
-
-    /* Get the interrupt initialized */
-    prussdrv_pruintc_init(&pruss_intc_initdata);
-
-    return 0;
-}
+static int fd_wtdog=-1;
 
 int system_init() 
 {
@@ -55,15 +36,13 @@ int system_init()
     m_state.m_left_pwm = 0;
     m_state.m_right_pwm = 0;
     
-    pru_init();
-
     if(r_message_init() < 0)
         return -1;
 
     if(r_timer_init() < 0)
         return -1;
 
-//    led_regist();
+    led_regist();
 
 //    usonic_regist();
     servo_regist();
@@ -83,8 +62,25 @@ int system_init()
     printf("MOTOR INIT FIN!\n");
 
     servo_init();
+
+    fd_wtdog = open("/dev/watchdog", O_WRONLY);  
+    if(fd_wtdog == -1) {  
+        int err = errno;  
+        printf("\n!!! FAILED to open /dev/watchdog, errno: %d, %s\n", err, strerror(err));  
+        syslog(LOG_WARNING, "FAILED to open /dev/watchdog, errno: %d, %s", err, strerror(err));  
+    }
     
     return 0;
+}
+
+static void feed_wtdog()
+{
+    if(fd_wtdog >= 0) {  
+        if(write(fd_wtdog, "1", 1) != 1) {  
+            puts("\n!!! FAILED feeding watchdog");  
+            syslog(LOG_WARNING, "FAILED feeding watchdog");  
+        }  
+    }
 }
 
 int main(int argc, char *argv[])
@@ -98,18 +94,19 @@ int main(int argc, char *argv[])
     if(system_init() < 0)
         return -1;
 
-//    set_timer(0, R_TIMER_LOOP, 1000, led_blink, NULL);
+    set_timer(0, R_TIMER_LOOP, 10, led_shining, NULL);
 //    set_timer(R_MSG_TEST, R_TIMER_LOOP, 5000, hm_test, NULL);
-    set_timer(R_MSG_MOTOR_SPEED, R_TIMER_LOOP, 4000, my_motor_speed, NULL);
-    set_timer(R_MSG_USONIC_SCAN, R_TIMER_LOOP, 5000, usonic_sensor_scan, NULL);
+//    set_timer(R_MSG_MOTOR_SPEED, R_TIMER_LOOP, 4000, my_motor_speed, NULL);
+    set_timer(R_MSG_USONIC_DETECT, R_TIMER_LOOP, 1000, usonic_detect, NULL);
+//    set_timer(R_MSG_MPU6050_DETECT, R_TIMER_LOOP, 1000, mpu6050_detect, NULL);
     set_timer(R_MSG_SERVO_0, R_TIMER_LOOP, 1000, servo_0_rotating, 0);
 
     pthread_create(&tm_thread, NULL, &timer_scan_thread, NULL);
-//    pthread_create(&sonic_thread, NULL, &usonic_sensor_scan, NULL);
     pthread_create(&commu_thread, NULL, &commu_proc, NULL);
 
     while(1)
     {
+        feed_wtdog();
         node = r_get_message();
         if(node == NULL)
         {
@@ -136,7 +133,6 @@ int main(int argc, char *argv[])
     }
 
     pthread_join(tm_thread, NULL);
-//    pthread_join(sonic_thread, NULL);
     pthread_join(commu_thread, NULL);
 
     gpio_exit();

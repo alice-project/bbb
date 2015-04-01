@@ -52,6 +52,11 @@
 		"pru1",
 		"pruss",
 
+	/* ------ KEYES LED ------ */
+        "P9.15",
+        "P9.16",
+        "P9.23",
+
 	/* ------ MPU6050 ------ */
 		/* the pin header uses */
 		"P9.18",	/* i2c1_sda */
@@ -181,10 +186,10 @@
 			robot_dcmotor_pins: robot_dcmotor_pins {
 				status = "okay";
 				pinctrl-single,pins = <
-					0x70 0x37   /* P9_11, gpio0.30  */
-					0x78 0x37   /* P9_12, gpio1.28  */
-					0x74 0x37   /* P9_13, gpio0.31  */
-					0x48 0x37   /* P9_14, gpio1.18  */
+					0x70 0x27   /* P9_11, gpio0.30  */
+					0x78 0x27   /* P9_12, gpio1.28  */
+					0x74 0x27   /* P9_13, gpio0.31  */
+					0x48 0x27   /* P9_14, gpio1.18  */
 				>;
 			};
 		};
@@ -288,5 +293,22 @@
 			// };
 		};
 	};
+
+	/* ----------- shining KEYES LED ------------ */
+	fragment@60 {
+		target = <&am33xx_pinmux>;
+		__overlay__ {
+
+			keyes_led_pins: keyes_led_pins {
+				status = "okay";
+				pinctrl-single,pins = <
+					0x40 0x37   /* P9_15, gpio1.16, RED  */
+					0x4c 0x37   /* P9_16, gpio1.19, GREEN  */
+					0x44 0x37   /* P9_23, gpio1.17, BLUE  */
+				>;
+			};
+		};
+	};
+
 
 };

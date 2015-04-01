@@ -34,6 +34,10 @@ GtkRadioButton *rb_right_forward;
 GtkRadioButton *rb_right_stop;
 GtkRadioButton *rb_right_backward;
 
+GtkGrid *grid_control;
+
+GtkScale *left_speed;
+GtkScale *right_speed;
 
 /*
 Forward
@@ -114,44 +118,59 @@ void on_button_gc_send_clicked(GtkWidget *button, gpointer data)
     send_gc_command();
 }
 
-void on_button_light_on_clicked(GtkWidget *button, gpointer data)
-{
-    send_light_command(BA_LIGHT_ON);
-}
-
-void on_button_light_off_clicked(GtkWidget *button, gpointer data)
-{
-    send_light_command(BA_LIGHT_OFF);
-}
-
 void on_button_motion_cmd_clicked(GtkWidget *button, gpointer data)
 {
     struct s_base_motion motion;
 
     if(gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(rb_left_forward))) {
         motion.left_action = START_ACTION;
-        motion.left_dir = POSITIVE_DIR;
+        motion.left_data = POSITIVE_DIR;
     } else if(gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(rb_left_stop))) {
         motion.left_action = STOP_ACTION;
-        motion.left_dir = POSITIVE_DIR;
+        motion.left_data = POSITIVE_DIR;
     } else if(gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(rb_left_backward))) {
         motion.left_action = START_ACTION;
-        motion.left_dir = NEGATIVE_DIR;
+        motion.left_data = NEGATIVE_DIR;
     }
 
     if(gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(rb_right_forward))) {
         motion.right_action = START_ACTION;
-        motion.right_dir = POSITIVE_DIR;
+        motion.right_data = POSITIVE_DIR;
     } else if(gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(rb_right_stop))){
         motion.right_action = STOP_ACTION;
-        motion.right_dir = POSITIVE_DIR;
+        motion.right_data = POSITIVE_DIR;
     } else if(gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(rb_right_backward))){
         motion.right_action = START_ACTION;
-        motion.right_dir = NEGATIVE_DIR;
+        motion.right_data = NEGATIVE_DIR;
     }
 
     send_motion_command(&motion);
 }
+
+void right_speed_value_changed_cb(GtkWidget *button, gpointer data)
+{
+    struct s_base_motion motion;
+    
+    motion.right_action = SET_DUTY_ACTION;
+    motion.right_data = (int)gtk_range_get_value (GTK_RANGE(right_speed));
+
+    motion.left_action = NULL_ACTION;
+    
+    send_motion_command(&motion);
+}
+
+void left_speed_value_changed_cb(GtkWidget *button, gpointer data)
+{
+    struct s_base_motion motion;
+
+    motion.left_action = SET_DUTY_ACTION;
+    motion.left_data = (int)gtk_range_get_value (GTK_RANGE(left_speed));
+    
+    motion.right_action = NULL_ACTION;
+    
+    send_motion_command(&motion);
+}
+
 
 void on_button_test_clicked(GtkWidget *button, gpointer data)
 {
@@ -163,25 +182,14 @@ void on_button_servo_clicked(GtkWidget *button, gpointer data)
     send_servo_command();
 }
 
-void on_button_duty_incr_clicked(GtkWidget *button, gpointer data)
+void on_led_switch_button_press_event (GtkWidget *sw, gpointer data)
 {
-    send_pwm_duty_command(0);
+    if(gtk_switch_get_active (GTK_SWITCH(sw)))
+        send_light_command(BA_LIGHT_ON);
+    else
+        send_light_command(BA_LIGHT_OFF);
 }
 
-void on_button_duty_dec_clicked(GtkWidget *button, gpointer data)
-{
-    send_pwm_duty_command(1);
-}
-
-void on_button_freq_incr_clicked(GtkWidget *button, gpointer data)
-{
-    send_pwm_freq_command(0);
-}
-
-void on_button_freq_dec_clicked(GtkWidget *button, gpointer data)
-{
-    send_pwm_freq_command(1);
-}
 
 int main (int argc, char *argv[])
 {
@@ -201,6 +209,8 @@ int main (int argc, char *argv[])
     connect_tb = GTK_WIDGET (gtk_builder_get_object (builder, "toolbutton_connect"));
     disconnect_tb = GTK_WIDGET (gtk_builder_get_object (builder, "toolbutton_disconnect"));
 
+    grid_control = GTK_GRID (gtk_builder_get_object (builder, "grid_control"));
+
     rb_left_forward = GTK_RADIO_BUTTON (gtk_builder_get_object (builder, "rb_left_forward"));
     rb_left_stop = GTK_RADIO_BUTTON (gtk_builder_get_object (builder, "rb_left_stop"));
     rb_left_backward = GTK_RADIO_BUTTON (gtk_builder_get_object (builder, "rb_left_reverse"));
@@ -212,6 +222,9 @@ int main (int argc, char *argv[])
     rb_right_backward = GTK_RADIO_BUTTON (gtk_builder_get_object (builder, "rb_right_reverse"));
     gtk_radio_button_join_group(rb_right_stop, rb_right_forward);
     gtk_radio_button_join_group(rb_right_backward, rb_right_forward);
+
+    left_speed = GTK_SCALE (gtk_builder_get_object (builder, "left_speed"));
+    right_speed = GTK_SCALE (gtk_builder_get_object (builder, "right_speed"));
 
     log_tv = GTK_WIDGET (gtk_builder_get_object (builder, "log_tv"));
 

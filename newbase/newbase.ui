@@ -2,6 +2,22 @@
 <!-- Generated with glade 3.16.1 -->
 <interface>
   <requires lib="gtk+" version="3.10"/>
+  <object class="GtkAdjustment" id="adj_left_speed">
+    <property name="upper">100</property>
+    <property name="value">7.5</property>
+    <property name="step_increment">1</property>
+    <property name="page_increment">10</property>
+    <property name="page_size">20</property>
+    <signal name="value-changed" handler="left_speed_value_changed_cb" swapped="no"/>
+  </object>
+  <object class="GtkAdjustment" id="adj_right_speed">
+    <property name="upper">100</property>
+    <property name="value">7.5</property>
+    <property name="step_increment">1</property>
+    <property name="page_increment">10</property>
+    <property name="page_size">20</property>
+    <signal name="value-changed" handler="right_speed_value_changed_cb" swapped="no"/>
+  </object>
   <object class="GtkWindow" id="m_window">
     <property name="can_focus">False</property>
     <signal name="destroy" handler="on_m_window_destroy" swapped="no"/>
@@ -208,9 +224,10 @@
                                   </packing>
                                 </child>
                                 <child>
-                                  <object class="GtkSwitch" id="switch1">
+                                  <object class="GtkSwitch" id="led_switch">
                                     <property name="visible">True</property>
                                     <property name="can_focus">True</property>
+                                    <signal name="button-press-event" handler="on_led_switch_button_press_event" swapped="no"/>
                                   </object>
                                   <packing>
                                     <property name="expand">False</property>
@@ -273,7 +290,7 @@
                         <property name="can_focus">False</property>
                         <property name="left_padding">12</property>
                         <child>
-                          <object class="GtkGrid" id="grid1">
+                          <object class="GtkGrid" id="grid_control">
                             <property name="visible">True</property>
                             <property name="can_focus">False</property>
                             <property name="row_spacing">2</property>
@@ -389,19 +406,17 @@
                                 <signal name="clicked" handler="on_button_motion_cmd_clicked" swapped="no"/>
                               </object>
                               <packing>
-                                <property name="left_attach">1</property>
+                                <property name="left_attach">0</property>
                                 <property name="top_attach">2</property>
-                                <property name="width">1</property>
+                                <property name="width">3</property>
                                 <property name="height">1</property>
                               </packing>
                             </child>
                             <child>
-                              <object class="GtkButton" id="button_duty_incr">
-                                <property name="label" translatable="yes">Duty++</property>
+                              <object class="GtkLabel" id="label7">
                                 <property name="visible">True</property>
-                                <property name="can_focus">True</property>
-                                <property name="receives_default">True</property>
-                                <signal name="clicked" handler="on_button_duty_incr_clicked" swapped="no"/>
+                                <property name="can_focus">False</property>
+                                <property name="label" translatable="yes">Left Speed</property>
                               </object>
                               <packing>
                                 <property name="left_attach">0</property>
@@ -411,27 +426,10 @@
                               </packing>
                             </child>
                             <child>
-                              <object class="GtkButton" id="button_duty_dec">
-                                <property name="label" translatable="yes">Duty--</property>
+                              <object class="GtkLabel" id="label8">
                                 <property name="visible">True</property>
-                                <property name="can_focus">True</property>
-                                <property name="receives_default">True</property>
-                                <signal name="clicked" handler="on_button_duty_dec_clicked" swapped="no"/>
-                              </object>
-                              <packing>
-                                <property name="left_attach">1</property>
-                                <property name="top_attach">3</property>
-                                <property name="width">1</property>
-                                <property name="height">1</property>
-                              </packing>
-                            </child>
-                            <child>
-                              <object class="GtkButton" id="button_freq_incr">
-                                <property name="label" translatable="yes">Freq++</property>
-                                <property name="visible">True</property>
-                                <property name="can_focus">True</property>
-                                <property name="receives_default">True</property>
-                                <signal name="clicked" handler="on_button_freq_incr_clicked" swapped="no"/>
+                                <property name="can_focus">False</property>
+                                <property name="label" translatable="yes">Right Speed</property>
                               </object>
                               <packing>
                                 <property name="left_attach">0</property>
@@ -441,31 +439,36 @@
                               </packing>
                             </child>
                             <child>
-                              <object class="GtkButton" id="button_freq_dec">
-                                <property name="label" translatable="yes">Freq--</property>
+                              <object class="GtkScale" id="left_speed">
                                 <property name="visible">True</property>
                                 <property name="can_focus">True</property>
-                                <property name="receives_default">True</property>
-                                <signal name="clicked" handler="on_button_freq_dec_clicked" swapped="no"/>
+                                <property name="adjustment">adj_left_speed</property>
+                                <property name="fill_level">90</property>
+                                <property name="round_digits">0</property>
+                                <property name="value_pos">left</property>
                               </object>
                               <packing>
                                 <property name="left_attach">1</property>
-                                <property name="top_attach">4</property>
-                                <property name="width">1</property>
+                                <property name="top_attach">3</property>
+                                <property name="width">2</property>
                                 <property name="height">1</property>
                               </packing>
                             </child>
                             <child>
-                              <placeholder/>
-                            </child>
-                            <child>
-                              <placeholder/>
-                            </child>
-                            <child>
-                              <placeholder/>
-                            </child>
-                            <child>
-                              <placeholder/>
+                              <object class="GtkScale" id="right_speed">
+                                <property name="visible">True</property>
+                                <property name="can_focus">True</property>
+                                <property name="adjustment">adj_right_speed</property>
+                                <property name="fill_level">90</property>
+                                <property name="round_digits">0</property>
+                                <property name="value_pos">left</property>
+                              </object>
+                              <packing>
+                                <property name="left_attach">1</property>
+                                <property name="top_attach">4</property>
+                                <property name="width">2</property>
+                                <property name="height">1</property>
+                              </packing>
                             </child>
                           </object>
                         </child>

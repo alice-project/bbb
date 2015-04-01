@@ -23,19 +23,14 @@ SPEED_DETECT:
     SBBO      r0, r1, 0, 4
 
     // Enable Cycle Counter
-    MOV       r1, CONTROL_0
+    MOV       r1, CONTROL_1
     LBBO      r0, r1, 0, 4
-    OR        r0, r0, 0xa
+    OR        r0, r0, 0x8
     SBBO      r0, r1, 0, 4
-
-    //set ARM such that PRU can write to GPIO
-    LBCO      r0, C4, 4, 4
-    CLR       r0, r0, 4
-    SBCO      r0, C4, 4, 4
 
 DETECT_RUN:
 
-    MOTOR_SPEED_PROC LEFT_MOTOR_DECODER_POWER_BIT, 0, 0, 1, LEFT_MOTOR_DECODER_COUNT_BIT1
+    LEFT_MOTOR_SPEED_PROC LEFT_COUNT_BIT
 
     JMP DETECT_RUN
 

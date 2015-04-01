@@ -1,8 +1,11 @@
+#include <stdio.h>
+#include <stdlib.h>
 #include "i2c_func.h"
 #include "r_mpu6050.h"
 
 int fd_mpu6050 = -1;
-unsigned char mpu6050_buffer[22];
+unsigned int accel_x, accel_y, accel_z;
+unsigned int gyro_x, gyro_y, gyro_z;
 
 /** Set clock source setting.
  * An internal 8MHz oscillator, gyroscope based clock, or external sources can
@@ -147,3 +150,36 @@ void mpu6050_init()
     if(fd_mpu6050 >= 0)
         i2c_close(fd_mpu6050);
 }
+
+static unsigned int get_measurement(unsigned char r_hi, unsigned char r_lo)
+{
+    int hi, lo;
+    hi = i2c_smbus_read_byte_data(fd_mpu6050, r_hi);
+    hi = (hi > 0)?hi:0;
+    lo = i2c_smbus_read_byte_data(fd_mpu6050, r_lo);
+    lo = (lo > 0)?lo:0;
+
+    return ((hi<<8)+lo);
+}
+
+int mpu6050_detect(void *data)
+{
+    fd_mpu6050 = i2c_open(2, MPU6050_DEFAULT_ADDRESS);
+
+    accel_x = get_measurement(0x3b, 0x3c);
+    accel_y = get_measurement(0x3d, 0x3e);
+    accel_z = get_measurement(0x3f, 0x40);
+    gyro_x = get_measurement(0x43, 0x44);
+    gyro_y = get_measurement(0x45, 0x46);
+    gyro_z = get_measurement(0x47, 0x48);
+
+printf("accel: %d-%d-%d\n", accel_x, accel_y, accel_z);
+printf("gyro: %d-%d-%d\n", gyro_x, gyro_y, gyro_z);
+
+    if(fd_mpu6050 >= 0)
+        i2c_close(fd_mpu6050);
+
+    return 0;
+}
+
+

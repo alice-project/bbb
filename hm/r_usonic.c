@@ -46,7 +46,7 @@ int usonic_init()
     return 0;
 }
 
-int usonic_detect(int item)
+int usonic_detect_item(int item)
 {
     int dist_hi, dist_lo;
     int fd_usonic = i2c_open(2, usonic_addr[item]);
@@ -70,9 +70,9 @@ int usonic_detect(int item)
         i2c_close(fd_usonic);
 }
 
-int usonic_sensor_scan(void *data)
+int usonic_detect(void *data)
 {
-    usonic_detect(LEFT_FRONT);
+    usonic_detect_item(LEFT_FRONT);
     return 0;
 }
 

@@ -1,9 +1,9 @@
 .origin 0
-.entrypoint USONIC_DETECT
+.entrypoint SPEED_DETECT
 
 #include "hm_pru.hp"
 
-USONIC_DETECT:
+SPEED_DETECT:
 
     // Enable OCP master port
     LBCO      r0, CONST_PRUCFG, 4, 4
@@ -25,22 +25,14 @@ USONIC_DETECT:
     // Enable Cycle Counter
     MOV       r1, CONTROL_0
     LBBO      r0, r1, 0, 4
-    OR        r0, r0, 0xa
+    OR        r0, r0, 0x8
     SBBO      r0, r1, 0, 4
 
-    //set ARM such that PRU can write to GPIO
-    LBCO      r0, C4, 4, 4
-    CLR       r0, r0, 4
-    SBCO      r0, C4, 4, 4
+DETECT_RUN:
 
-USONIC_RUN:
+    RIGHT_MOTOR_SPEED_PROC RIGHT_COUNT_BIT
 
-    USONIC_PROC USONIC1_TRIGGER_BIT, USONIC1_ECHO_BIT, 1, 3
-    USONIC_PROC USONIC2_TRIGGER_BIT, USONIC2_ECHO_BIT, 2, 1
-    USONIC_PROC USONIC3_TRIGGER_BIT, USONIC3_ECHO_BIT, 3, 2
-    USONIC_PROC USONIC4_TRIGGER_BIT, USONIC4_ECHO_BIT, 4, 0
-
-    JMP USONIC_RUN
+    JMP DETECT_RUN
 
     HALT
 
