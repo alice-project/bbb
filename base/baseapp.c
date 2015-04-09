@@ -19,6 +19,10 @@
 #include "mcast.h"
 #include "cmd_util.h"
 
+struct {
+  cairo_surface_t *image;  
+} glob;
+
 GThread *sw_thread = NULL;
 GThread *mc_thread = NULL;
 
@@ -34,16 +38,24 @@ GtkRadioButton *rb_right_forward;
 GtkRadioButton *rb_right_stop;
 GtkRadioButton *rb_right_backward;
 
+GtkRadioButton *radio_auto;
+GtkRadioButton *radio_manual;
+
 GtkGrid *grid_control;
 
 GtkScale *left_speed;
 GtkScale *right_speed;
+
+GtkWidget  *m_win;
+
+unsigned char *video_frame = NULL;
 
 /*
 Forward
 Stop
 
 */
+
 
 void BASE_LOG(char *buffer)
 {
@@ -113,9 +125,94 @@ void on_toolbutton_disconnect_clicked (GtkWidget *button, gpointer data)
     gtk_widget_set_sensitive(disconnect_tb, FALSE);
 }
 
-void on_button_gc_send_clicked(GtkWidget *button, gpointer data)
+void on_radio_auto_toggled(GtkWidget *radio, gpointer data)
 {
-    send_gc_command();
+    if(gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(radio)))
+        send_gc_command(AUTO_MODE);
+    else
+        send_gc_command(MANUAL_MODE);
+}
+
+void on_rb_left_forward_toggled(GtkWidget *radio, gpointer data)
+{
+    struct s_base_motion motion;
+
+    if(!gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(radio)))
+        return;
+
+    motion.left_action = START_ACTION;
+    motion.left_data = POSITIVE_DIR;
+    motion.right_action = NULL_ACTION;
+
+    send_motion_command(&motion);
+}
+
+void on_rb_left_stop_toggled(GtkWidget *radio, gpointer data)
+{
+    struct s_base_motion motion;
+
+    if(!gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(radio)))
+        return;
+
+    motion.left_action = STOP_ACTION;
+    motion.right_action = NULL_ACTION;
+
+    send_motion_command(&motion);
+}
+
+void on_rb_left_reverse_toggled(GtkWidget *radio, gpointer data)
+{
+    struct s_base_motion motion;
+
+    if(!gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(radio)))
+        return;
+
+    motion.left_action = START_ACTION;
+    motion.left_data = NEGATIVE_DIR;
+    motion.right_action = NULL_ACTION;
+
+    send_motion_command(&motion);
+}
+
+void on_rb_right_forward_toggled(GtkWidget *radio, gpointer data)
+{
+    struct s_base_motion motion;
+
+    if(!gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(radio)))
+        return;
+
+    motion.right_action = START_ACTION;
+    motion.right_data = POSITIVE_DIR;
+    motion.left_action = NULL_ACTION;
+
+    send_motion_command(&motion);
+}
+
+void on_rb_right_stop_toggled(GtkWidget *radio, gpointer data)
+{
+    struct s_base_motion motion;
+
+    if(!gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(radio)))
+        return;
+
+    motion.right_action = STOP_ACTION;
+    motion.left_action = NULL_ACTION;
+
+    send_motion_command(&motion);
+}
+
+void on_rb_right_reverse_toggled(GtkWidget *radio, gpointer data)
+{
+    struct s_base_motion motion;
+
+    if(!gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(radio)))
+        return;
+
+    motion.right_action = START_ACTION;
+    motion.right_data = NEGATIVE_DIR;
+    motion.left_action = NULL_ACTION;
+
+    send_motion_command(&motion);
 }
 
 void on_button_motion_cmd_clicked(GtkWidget *button, gpointer data)
@@ -190,13 +287,50 @@ void on_led_switch_button_press_event (GtkWidget *sw, gpointer data)
         send_light_command(BA_LIGHT_OFF);
 }
 
+static void do_drawing(cairo_t *cr)
+{
+    cairo_set_source_surface(cr, glob.image, 10, 10);
+    cairo_paint(cr);    
+}
+
+void on_hm_sight_draw(GtkWidget *sight, cairo_t *cr, gpointer data)
+{
+    do_drawing(cr);
+}
+
+int tms=0;
+static gboolean time_handler(GtkWidget *widget)
+{
+if((tms&1)==0)
+glob.image = cairo_image_surface_create_from_png("mask1.png");
+else
+glob.image = cairo_image_surface_create_from_png("mask2.png");
+
+tms++;
+
+  gtk_widget_queue_draw(widget);
+
+  return TRUE;
+}
+
+void update_video(unsigned char *data, int width, int height)
+{
+    glob.image = cairo_image_surface_create_for_data(data, 
+                               CAIRO_FORMAT_RGB24, width, height, 
+                               cairo_format_stride_for_width (CAIRO_FORMAT_RGB24, width));
+    
+    gtk_widget_queue_draw(m_win);
+}
+
 
 int main (int argc, char *argv[])
 {
     GtkBuilder *builder;
-    GtkWidget  *window;
-
     GtkWidget  *log_tv;
+
+    glob.image = cairo_image_surface_create_from_png("mask1.png");
+
+    video_frame = malloc(640*480*10);
         
     gtk_init (&argc, &argv);
         
@@ -204,7 +338,7 @@ int main (int argc, char *argv[])
     gtk_builder_add_from_file (builder, "newbase.ui", NULL);
     gtk_builder_connect_signals (builder, NULL);          
 
-    window = GTK_WIDGET (gtk_builder_get_object (builder, "m_window"));
+    m_win = GTK_WIDGET (gtk_builder_get_object (builder, "m_window"));
 
     connect_tb = GTK_WIDGET (gtk_builder_get_object (builder, "toolbutton_connect"));
     disconnect_tb = GTK_WIDGET (gtk_builder_get_object (builder, "toolbutton_disconnect"));
@@ -223,6 +357,9 @@ int main (int argc, char *argv[])
     gtk_radio_button_join_group(rb_right_stop, rb_right_forward);
     gtk_radio_button_join_group(rb_right_backward, rb_right_forward);
 
+    radio_auto = GTK_RADIO_BUTTON (gtk_builder_get_object (builder, "radio_auto"));
+    radio_manual = GTK_RADIO_BUTTON (gtk_builder_get_object (builder, "radio_manual"));
+
     left_speed = GTK_SCALE (gtk_builder_get_object (builder, "left_speed"));
     right_speed = GTK_SCALE (gtk_builder_get_object (builder, "right_speed"));
 
@@ -232,13 +369,17 @@ int main (int argc, char *argv[])
     gtk_text_buffer_set_text (log_buf, "Welcome to hamster base!\n", -1);
 
     g_object_unref (G_OBJECT (builder));
-    
-    gtk_widget_show_all(window);
-    gtk_window_maximize(GTK_WINDOW(window));
+ 
+    //g_timeout_add(500, (GSourceFunc) time_handler, (gpointer) m_win);
+   
+    gtk_widget_show_all(m_win);
+    gtk_window_maximize(GTK_WINDOW(m_win));
 
     get_my_own_addr();
 
     gtk_main ();
         
+    cairo_surface_destroy(glob.image);
+
     return 0;
 }

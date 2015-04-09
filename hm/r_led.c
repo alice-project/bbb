@@ -19,7 +19,7 @@ static int shining_index=0;
 static int led_switch=0;
 
 const static int shining_rgb[][3] = {
-//    {0, 0, 0},
+    {0, 0, 0},
     {0, 0, 1},
     {0, 1, 0},
     {1, 0, 0},
@@ -60,7 +60,13 @@ int set_led_off()
 int led_shining(void *d)
 {
     if(led_switch==0)
+    {
+        shining_index = 0;
+        set_led(R_LED_CONNECTOR, R_LED_PIN, shining_rgb[shining_index][0]);
+        set_led(G_LED_CONNECTOR, G_LED_PIN, shining_rgb[shining_index][1]);
+        set_led(B_LED_CONNECTOR, B_LED_PIN, shining_rgb[shining_index][2]);
         return 0;
+    }
 
     if(shining_index > 7)
         shining_index = 0;

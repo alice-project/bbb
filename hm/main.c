@@ -63,6 +63,13 @@ int system_init()
 
     servo_init();
 
+    if(video_init(0) < 0)
+    {
+        printf("VIDEO INIT failed!\n");
+        return -1;
+    }
+    printf("VIDEO INIT!\n");
+    
     fd_wtdog = open("/dev/watchdog", O_WRONLY);  
     if(fd_wtdog == -1) {  
         int err = errno;  
@@ -94,10 +101,12 @@ int main(int argc, char *argv[])
     if(system_init() < 0)
         return -1;
 
+    video_start(0);
+
     set_timer(0, R_TIMER_LOOP, 10, led_shining, NULL);
 //    set_timer(R_MSG_TEST, R_TIMER_LOOP, 5000, hm_test, NULL);
 //    set_timer(R_MSG_MOTOR_SPEED, R_TIMER_LOOP, 4000, my_motor_speed, NULL);
-    set_timer(R_MSG_USONIC_DETECT, R_TIMER_LOOP, 1000, usonic_detect, NULL);
+//    set_timer(R_MSG_USONIC_DETECT, R_TIMER_LOOP, 1000, usonic_detect, NULL);
 //    set_timer(R_MSG_MPU6050_DETECT, R_TIMER_LOOP, 1000, mpu6050_detect, NULL);
     set_timer(R_MSG_SERVO_0, R_TIMER_LOOP, 1000, servo_0_rotating, 0);
 

@@ -20,9 +20,10 @@ extern struct s_hm g_hms[];
 
 static char cmd_buffer[1500];
 
-int send_gc_command()
+int send_gc_command(int mode)
 {
     struct s_com *cmd;
+    struct s_base_light *light_cmd;
 
     BASE_LOG("General Control Command is sending ...");
 

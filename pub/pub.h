@@ -3,11 +3,19 @@
 
 #define MAX_HAMTERS 16
 
+#define VIDEO_MORE_PACKETS  (0x1)
+
 struct s_com
 {
     unsigned char code;
     unsigned char id;
-    unsigned int  flags;
+    unsigned short  flags;
+};
+
+struct s_hm_video
+{
+    unsigned int length;
+    unsigned char data[0];
 };
 
 struct s_request_base
@@ -66,13 +74,17 @@ struct s_base_pwm_freq
 /* Operation Mode */
 #define MANUAL_MODE 0
 #define AUTO_MODE   1
-
+struct s_hm_mode
+{
+    unsigned int mode;
+};
 /*  */
 
 enum {
     /* 0 ~ 127: hm to base */
     HM_REQUEST_BASE = 0,
     HM_REPORTING,
+    HM_CAMERA,
 
     /* 128 ~ 255: base to hm */
     BA_MC_IPADDR = 128,

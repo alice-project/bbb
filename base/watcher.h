@@ -3,4 +3,6 @@
 
 gpointer start_watching();
 
+void close_sw_fd();
+
 #endif

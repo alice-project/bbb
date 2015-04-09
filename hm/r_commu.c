@@ -126,7 +126,6 @@ static int wait_for_base()
             {
                 rcv_payload = (struct s_mc_ipaddr *)(rcv_msg + sizeof(struct s_com));
                 d_base_ipaddr =  htonl(rcv_payload->ipaddr);
-printf("BASE IP is 0x%x\n", d_base_ipaddr);
                 close(sockfd);
                 return 0;
             }
@@ -156,7 +155,6 @@ int regular_info(void *data)
     msg->flags = 0;
     
     n = sendto(m_base.fd, snd_buf, BUFLEN, 0, (struct sockaddr *) &m_base.m_addr, sizeof(struct sockaddr_in));
-printf("regular reporting to base: %d!\n", n);
 
     free(snd_buf);
     return 0;
@@ -174,7 +172,7 @@ void *commu_proc(void *data)
         printf("BASE not responsed!\n");
         return NULL;
     }
-    
+
     printf("received response from BASE!\n");
     printf("BASE ip is 0x%x\n", d_base_ipaddr);
 
@@ -219,6 +217,18 @@ void *commu_proc(void *data)
             case BA_LIGHT_CMD:
             {
                 printf("received  BA_LIGHT_CMD command from base\n");
+                struct s_base_light *light_cmd = (struct s_base_light *)(rcv_buf + sizeof(struct s_com));
+                if(light_cmd->on_off == BA_LIGHT_ON) {
+                    set_led_on();
+                }
+                else {
+                    set_led_off();
+                }
+                break;
+            }
+            case BA_GC_SETTINGS:
+            {
+                printf("received  BA_GC_SETTINGS command from base\n");
                 struct s_base_light *light_cmd = (struct s_base_light *)(rcv_buf + sizeof(struct s_com));
                 if(light_cmd->on_off == BA_LIGHT_ON) {
                     set_led_on();
