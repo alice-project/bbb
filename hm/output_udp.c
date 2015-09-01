@@ -71,7 +71,7 @@ static int fd, delay, max_frame_size;
 static char *folder = "/tmp";
 static unsigned char *frame = NULL;
 static int input_number = 0;
-//static unsigned char sndbuffer[1500];
+static unsigned char sndbuffer[MAX_VIDEO_FRAME_MSG];
 
 /******************************************************************************
 Description.: clean up allocated ressources
@@ -105,8 +105,6 @@ Return Value:
 void *worker_thread(void *arg)
 {
     int frame_size = 0;
-    int buffer_left = 0, offset=0;
-    unsigned char *sndbuffer;
 
     struct s_com *msg;
     struct s_hm_video *video;
@@ -123,50 +121,24 @@ void *worker_thread(void *arg)
 
         /* read buffer */
         frame_size = pglobal->in[input_number].size;
+        if(frame_size > 64*1024)
+            continue;
 
+        msg = (struct s_com *)sndbuffer;
+        msg->code = HM_CAMERA;
+        msg->id = 0;
+        msg->flags = 0;
+        video = (struct s_hm_video *)(sndbuffer + sizeof(struct s_com));
+        video->length = frame_size;
         /* copy frame to our local buffer now */
-        memcpy(frame, pglobal->in[input_number].buf, frame_size);
+        memcpy(video->data, pglobal->in[input_number].buf, frame_size);
 
         /* allow others to access the global buffer again */
         pthread_mutex_unlock(&pglobal->in[input_number].db);
 
         // send back client's message that came in udpbuffer
-        // send 1024 data every time
-        buffer_left = frame_size;
-        offset = 0;
-        while(buffer_left >= 1024)
-        {
-            sndbuffer = (unsigned char *)malloc(1500);
-            memset(sndbuffer, 0, 1500);
-            msg = (struct s_com *)sndbuffer;
-            msg->code = HM_CAMERA;
-            msg->id = 0;
-            msg->flags = VIDEO_MORE_PACKETS;
-            video = (struct s_hm_video *)(sndbuffer + sizeof(struct s_com));
-            video->length = 1024;
-            memcpy(video->data, frame+offset, 1024);
-            sendto(m_base.fd, sndbuffer, 1024+sizeof(struct s_com)+sizeof(struct s_hm_video), 0, 
-                    (struct sockaddr *) &m_base.m_addr, sizeof(struct sockaddr_in));
-            buffer_left -= 1024;
-            offset += 1024;
-            free(sndbuffer);
-        }
-        if(buffer_left > 0)
-        {
-            sndbuffer = (unsigned char *)malloc(1500);
-            memset(sndbuffer, 0, 1500);
-            msg = (struct s_com *)sndbuffer;
-            msg->code = HM_CAMERA;
-            msg->id = 0;
-            msg->flags = 0;
-            video = (struct s_hm_video *)(sndbuffer + sizeof(struct s_com));
-            video->length = buffer_left;
-            memcpy(video->data, frame+offset, buffer_left);
-            msg->flags = 0;
-            sendto(m_base.fd, sndbuffer, buffer_left+sizeof(struct s_com)+sizeof(struct s_hm_video), 0, 
-                   (struct sockaddr *) &m_base.m_addr, sizeof(struct sockaddr_in));
-            free(sndbuffer);
-        }
+        sendto(m_base.fd, sndbuffer, frame_size+sizeof(struct s_com)+sizeof(struct s_hm_video), 0, 
+               (struct sockaddr *) &m_base.m_addr, sizeof(struct sockaddr_in));
 
         /* if specified, wait now */
         if(delay > 0) {
@@ -190,8 +162,6 @@ Return Value: 0 if everything is ok, non-zero otherwise
 int output_init(output_parameter *param)
 {
     pglobal = param->global;
-
-    frame = malloc(640*480*10);
 
     return 0;
 }

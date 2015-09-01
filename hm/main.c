@@ -4,6 +4,8 @@
 #include <unistd.h>
 #include <syslog.h>
 
+#include "hm_config.h"
+
 #include "prussdrv.h"
 #include "pruss_intc_mapping.h"
 
@@ -21,11 +23,18 @@
 #include "r_servo.h"
 #include "r_mpu6050.h"
 
+extern MSG_HANDLER cmd_cb[64];
+
 struct s_hm_state m_state;
 static int fd_wtdog=-1;
 
+extern void *wifi_location(void *data);
+
 int system_init() 
 {
+    int i;
+    for(i=0;i<64;i++)
+        cmd_cb[i] = NULL;
     m_state.m_moving = 0;
     m_state.m_control = MANUAL_MODE;
     m_state.m_camera = 0;
@@ -42,34 +51,58 @@ int system_init()
     if(r_timer_init() < 0)
         return -1;
 
+    #ifdef ENABLE_LED
     led_regist();
+    #endif
 
-//    usonic_regist();
+    #ifdef ENABLE_USONIC
+    usonic_regist();
+    #endif
+
+    #ifdef ENABLE_SERVO
     servo_regist();
-    motor_regist();
+    #endif
 
+    #ifdef ENABLE_MOTOR
+    motor_regist();
+    #endif
+
+    #ifdef ENABLE_MPU6050
+    gyro_regist();
+    #endif
+
+	#if defined(ENABLE_GPIO_MMAP) || defined(ENABLE_GPIO_DTS)
     if(gpio_init() < 0)
         return -1;
+	#endif
 
+    #ifdef ENABLE_USONIC
     if(usonic_init() < 0)
     {
         printf("USONIC INIT failed!\n");
         return -1;
     }
     printf("USONIC INIT FIN!\n");
+    #endif
 
+    #ifdef ENABLE_MOTOR
     motor_init();
     printf("MOTOR INIT FIN!\n");
+    #endif
 
+    #ifdef ENABLE_SERVO
     servo_init();
+    #endif
 
+    #ifdef ENABLE_VEDIO
     if(video_init(0) < 0)
     {
         printf("VIDEO INIT failed!\n");
         return -1;
     }
     printf("VIDEO INIT!\n");
-    
+    #endif
+
     fd_wtdog = open("/dev/watchdog", O_WRONLY);  
     if(fd_wtdog == -1) {  
         int err = errno;  
@@ -78,6 +111,11 @@ int system_init()
     }
     
     return 0;
+}
+
+static safe_exit()
+{
+    r_timer_safe_exit();
 }
 
 static void feed_wtdog()
@@ -97,21 +135,59 @@ int main(int argc, char *argv[])
 
     pthread_t tm_thread;
     pthread_t commu_thread;
+    #ifdef ENABLE_SERVO
+    pthread_t servo_thread;
+    #endif
+
+	#ifdef ENABLE_MOTOR
+    pthread_t speed_detect_thd1,speed_detect_thd2;
+	#endif
+
+    #ifdef ENABLE_MPU6050
+    pthread_t mpu_thread;
+    #endif
+
+    #ifdef ENABLE_WIFI_LOC
+    pthread_t wifi_loc_thd;
+    #endif
 
     if(system_init() < 0)
         return -1;
 
+    #ifdef ENABLE_VIDEO
     video_start(0);
+    #endif
 
+    #ifdef ENABLE_LED
     set_timer(0, R_TIMER_LOOP, 10, led_shining, NULL);
-//    set_timer(R_MSG_TEST, R_TIMER_LOOP, 5000, hm_test, NULL);
-//    set_timer(R_MSG_MOTOR_SPEED, R_TIMER_LOOP, 4000, my_motor_speed, NULL);
-//    set_timer(R_MSG_USONIC_DETECT, R_TIMER_LOOP, 1000, usonic_detect, NULL);
-//    set_timer(R_MSG_MPU6050_DETECT, R_TIMER_LOOP, 1000, mpu6050_detect, NULL);
-    set_timer(R_MSG_SERVO_0, R_TIMER_LOOP, 1000, servo_0_rotating, 0);
+    #endif
+
+    #ifdef ENABLE_USONIC
+    set_timer(R_MSG_USONIC_DETECT, R_TIMER_LOOP, 100, usonic_detect, NULL);
+    #endif
+
+//    set_timer(R_MSG_SERVO_0, R_TIMER_LOOP, 1000, servo_0_rotating, 0);
+//    set_timer(R_MSG_SERVO_0, R_TIMER_LOOP, 1000, regular_servo_rotating, NULL);
 
     pthread_create(&tm_thread, NULL, &timer_scan_thread, NULL);
     pthread_create(&commu_thread, NULL, &commu_proc, NULL);
+
+    #ifdef ENABLE_SERVO
+    pthread_create(&servo_thread, NULL, &servo_proc, NULL);
+    #endif
+
+	#ifdef ENABLE_MOTOR
+    pthread_create(&speed_detect_thd1, NULL, &detect_left_speed, NULL);
+    pthread_create(&speed_detect_thd2, NULL, &detect_right_speed, NULL);
+	#endif
+
+    #ifdef ENABLE_MPU6050
+    pthread_create(&mpu_thread, NULL, &mpu6050_detect, NULL);
+    #endif
+
+    #ifdef ENABLE_WIFI_LOC
+    pthread_create(&wifi_loc_thd, NULL, &wifi_location, NULL);
+    #endif
 
     while(1)
     {
@@ -141,10 +217,25 @@ int main(int argc, char *argv[])
         usleep(100);
     }
 
+	#ifdef ENABLE_MOTOR
+    pthread_join(speed_detect_thd1, NULL);
+    pthread_join(speed_detect_thd2, NULL);
+	#endif
+
     pthread_join(tm_thread, NULL);
+
+    #ifdef ENABLE_MPU6050
+    pthread_join(mpu_thread, NULL);
+    #endif
+
     pthread_join(commu_thread, NULL);
+
+    #ifdef ENABLE_SERVO
+    pthread_join(servo_thread, NULL);
+    #endif
 
     gpio_exit();
 
     return 0;
 }
+

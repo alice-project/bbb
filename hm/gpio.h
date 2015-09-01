@@ -62,6 +62,13 @@ enum {
 
 #define BIT_IS_SET(x,b) (((x)>>(b)) & 0x1)
 
+enum GPIO_IRQ_MODE {
+    GPIO_IRQ_LOW_LEVEL = 0,
+    GPIO_IRQ_HIGH_LEVEL,
+    GPIO_IRQ_RISING_EDGE,
+    GPIO_IRQ_FALLING_EDGE,
+};
+
 int gpio_init();
 int gpio_exit();
 int gpio_set_dir(int connector, int pin, int dir);
@@ -72,5 +79,6 @@ int is_pin_low(int connector, int pin);
 void regist_gpio(int connector, int pin, int dir);
 int gpio_get_dir(int connector, int pin);
 void gpio_print_mode(int connector, int pin);
+int set_pin_irq_mode(int connector, int pin, enum GPIO_IRQ_MODE mode);
 
 #endif

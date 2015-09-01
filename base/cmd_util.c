@@ -1,4 +1,3 @@
-#include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
 #include <sys/types.h>
@@ -43,7 +42,7 @@ int send_gc_command(int mode)
 }
 
 
-int send_light_command(unsigned int cmds)
+int send_light_command(u_int32 cmds)
 {
     struct s_com *common_cmd;
     struct s_base_light *light_cmd;
@@ -116,23 +115,25 @@ int send_test_command()
     return 0;
 }
 
-int send_servo_command()
-{
-    return 0;
-}
-
-int send_pwm_duty_command(int change)
+int send_servo_command(int id, int angle)
 {
     struct s_com *common_cmd;
-    struct s_base_pwm_duty *duty_cmd;
+    struct s_base_servo_cmd *servo_cmd;
 
-    BASE_LOG("Test command is sending ...");
+    BASE_LOG("SERVO command is sending ...");
 
     memset(cmd_buffer, 0, sizeof(cmd_buffer));
     common_cmd = (struct s_com *)cmd_buffer;
-    common_cmd->code = BA_PWM_DUTY_CMD;
-    duty_cmd = (struct s_base_pwm_duty *)(cmd_buffer + sizeof(struct s_com));
-    duty_cmd->cmd = change;
+    common_cmd->code = BA_SERVO_CMD;
+    servo_cmd = (struct s_base_servo_cmd *)(cmd_buffer + sizeof(struct s_com));
+    servo_cmd->id = id;
+    if(angle > 0) {
+        servo_cmd->cmd = 1;
+        servo_cmd->angle = angle;
+    } else {
+        servo_cmd->cmd = 0;
+        servo_cmd->angle = -angle;
+    }
     if(send(g_hms[g_hm_id-1].fd, cmd_buffer, BUFLEN, 0) >= 0)
     {
         BASE_LOG("OK!\n");
@@ -145,18 +146,16 @@ int send_pwm_duty_command(int change)
     return 0;
 }
 
-int send_pwm_freq_command(int change)
+int send_camera_command(int state)
 {
     struct s_com *common_cmd;
-    struct s_base_pwm_freq *freq_cmd;
-
-    BASE_LOG("Test command is sending ...");
+    struct s_base_camera_cmd *camera_cmd;
 
     memset(cmd_buffer, 0, sizeof(cmd_buffer));
     common_cmd = (struct s_com *)cmd_buffer;
-    common_cmd->code = BA_PWM_FREQ_CMD;
-    freq_cmd = (struct s_base_pwm_freq *)(cmd_buffer + sizeof(struct s_com));
-    freq_cmd->cmd = change;
+    common_cmd->code = BA_CAMERA_CMD;
+    camera_cmd = (struct s_base_camera_cmd *)(cmd_buffer + sizeof(struct s_com));
+    camera_cmd->on_off = state;
     if(send(g_hms[g_hm_id-1].fd, cmd_buffer, BUFLEN, 0) >= 0)
     {
         BASE_LOG("OK!\n");
@@ -168,5 +167,4 @@ int send_pwm_freq_command(int change)
 
     return 0;
 }
-
 

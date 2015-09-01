@@ -39,11 +39,13 @@
 #include <pthread.h>
 #include <syslog.h>
 
+#include "pub.h"
+#include "common.h"
+
 #include "v4l2uvc.h"
 #include "huffman.h"
 #include "jpeg_utils.h"
 #include "dynctrl.h"
-//#include "uvcvideo.h"
 
 #define INPUT_PLUGIN_NAME "UVC webcam grabber"
 
@@ -66,15 +68,19 @@ static const struct {
     { "SXGA", 1280, 1024 }
 };
 
+extern struct s_base_info m_base;
+
 /* private functions and variables to this plugin */
 static globals *pglobal;
 static int gquality = 80;
-static unsigned int minimum_size = 0;
+static u_int32 minimum_size = 0;
 static int dynctrls = 1;
 
 void *cam_thread(void *);
 void cam_cleanup(void *);
-int input_cmd(int plugin, unsigned int control, unsigned int group, int value);
+int input_cmd(int plugin, u_int32 control, u_int32 group, int value);
+
+static unsigned char sndbuffer[MAX_VIDEO_FRAME_MSG];
 
 
 /*** plugin interface functions ***/
@@ -184,6 +190,10 @@ Return Value: unused, always NULL
 ******************************************************************************/
 void *cam_thread(void *arg)
 {
+    int n;
+    struct s_com *msg;
+    struct s_hm_video *video;
+
     context *pcontext = arg;
     pglobal = pcontext->pglobal;
 
@@ -215,8 +225,12 @@ void *cam_thread(void *arg)
             continue;
         }
 
-        /* copy JPG picture to global buffer */
-        pthread_mutex_lock(&pglobal->in[pcontext->id].db);
+        msg = (struct s_com *)sndbuffer;
+        msg->code = HM_CAMERA;
+        msg->id = 0;
+        msg->flags = 0;
+        video = (struct s_hm_video *)(sndbuffer + sizeof(struct s_com));
+        video->size = pcontext->videoIn->buf.bytesused;
 
         /*
          * If capturing in YUV mode convert to JPEG now.
@@ -226,18 +240,20 @@ void *cam_thread(void *arg)
          */
         if(pcontext->videoIn->formatIn == V4L2_PIX_FMT_YUYV) {
             DBG("compressing frame from input: %d\n", (int)pcontext->id);
-            pglobal->in[pcontext->id].size = compress_yuyv_to_jpeg(pcontext->videoIn, pglobal->in[pcontext->id].buf, pcontext->videoIn->framesizeIn, gquality);
+            pglobal->in[pcontext->id].size = compress_yuyv_to_jpeg(pcontext->videoIn, video->data, pcontext->videoIn->framesizeIn, gquality);
         } else {
             DBG("copying frame from input: %d\n", (int)pcontext->id);
-            pglobal->in[pcontext->id].size = memcpy_picture(pglobal->in[pcontext->id].buf, pcontext->videoIn->tmpbuffer, pcontext->videoIn->buf.bytesused);
+            pglobal->in[pcontext->id].size = memcpy_picture(video->data, pcontext->videoIn->tmpbuffer, pcontext->videoIn->buf.bytesused);
         }
 
         /* copy this frame's timestamp to user space */
         pglobal->in[pcontext->id].timestamp = pcontext->videoIn->buf.timestamp;
 
-        /* signal fresh_frame */
-        pthread_cond_broadcast(&pglobal->in[pcontext->id].db_update);
-        pthread_mutex_unlock(&pglobal->in[pcontext->id].db);
+        // send back client's message that came in udpbuffer
+        n = sendto(m_base.fd, msg,
+               video->size+sizeof(struct s_com)+sizeof(struct s_hm_video), 0, 
+               (struct sockaddr *) &m_base.m_addr, sizeof(struct sockaddr_in));
+printf("n=%d\n",n);
 
         /* only use usleep if the fps is below 5, otherwise the overhead is too long */
         if(pcontext->videoIn->fps < 5) {
@@ -261,7 +277,7 @@ Return Value:
 ******************************************************************************/
 void cam_cleanup(void *arg)
 {
-    static unsigned char first_run = 1;
+    static u_int8 first_run = 1;
     context *pcontext = arg;
     pglobal = pcontext->pglobal;
     if(!first_run) {
@@ -287,7 +303,7 @@ Input Value.: * control specifies the selected v4l2 control's id
 Return Value: depends in the command, for most cases 0 means no errors and
               -1 signals an error. This is just rule of thumb, not more!
 ******************************************************************************/
-int input_cmd(int plugin_number, unsigned int control_id, unsigned int group, int value)
+int input_cmd(int plugin_number, u_int32 control_id, u_int32 group, int value)
 {
     int ret = -1;
     int i = 0;

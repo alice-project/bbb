@@ -4,6 +4,7 @@
 #include <time.h>
 #include <sys/time.h>
 
+#include "r_list.h"
 #include "common.h"
 
 enum R_TIMER_TYPE {
@@ -21,11 +22,17 @@ struct r_timer {
 	void* data;
 };
 
-typedef struct r_list timer_queue;
+struct r_timer_list {
+    struct r_list list;
+    struct r_timer data;
+};
+
+typedef struct r_timer_list timer_queue;
 
 int r_timer_init();
 void *timer_scan_thread(void *);
 int set_timer(u_int32 msg_id, u_int32 , u_int32 msec, timer_func f, void *data);
+void r_timer_safe_exit();
 
 #endif
 

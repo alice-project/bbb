@@ -8,10 +8,13 @@
 
 #include "pub.h"
 #include "gpio.h"
-#include "r_usonic.h"
+#include "r_motor.h"
 
 static unsigned int *left_speed = NULL;
+static unsigned int *left_flag = NULL;
+
 static unsigned int *right_speed = NULL;
+static unsigned int *right_flag = NULL;
 
 const int motor_pin[][6] = {
     /* connector, PIN */
@@ -21,8 +24,8 @@ const int motor_pin[][6] = {
 };
 
 const int motor_decoder_pin[2][2] = {
-    {8, 22},
-    {8, 23},
+    {8, 12},
+    {8, 25},
 };
 
 void motor_regist()
@@ -35,8 +38,8 @@ void motor_regist()
     regist_gpio(motor_pin[1][2], motor_pin[1][3], DIR_OUT);
     regist_gpio(motor_pin[1][4], motor_pin[1][5], DIR_OUT);
 
-//    regist_gpio(motor_decoder_pin[0][0], motor_decoder_pin[0][1], DIR_OUT);
-//    regist_gpio(motor_decoder_pin[1][0], motor_decoder_pin[1][1], DIR_OUT);
+    regist_gpio(motor_decoder_pin[0][0], motor_decoder_pin[0][1], DIR_IN);
+    regist_gpio(motor_decoder_pin[1][0], motor_decoder_pin[1][1], DIR_IN);
 }
 
 int start_motor(int m)
@@ -112,6 +115,7 @@ static int motor_pru_init()
         printf("ERR, %d\n", __LINE__);
         return -1;
     }
+    right_flag  = (unsigned int*) (pru_mem);
     right_speed = (unsigned int*) (pru_mem)+1;
 
     prussdrv_map_prumem (PRUSS0_PRU1_DATARAM, &pru_mem);
@@ -121,13 +125,8 @@ static int motor_pru_init()
         return -1;
     }
 
+    left_flag  = (unsigned int*) (pru_mem);
     left_speed = (unsigned int*) (pru_mem)+1;
-
-int i;
-for(i=0;i<32;i++) {
-left_speed[i]=0;
-right_speed[i]=0;
-}
 
     /* Execute example on PRU */
     prussdrv_exec_program (0, "./hm_pru0.bin");
@@ -142,6 +141,7 @@ void motor_init()
     motor_pru_init();
 
     stop_chassis();
+
     set_pin_high(motor_pin[0][0], motor_pin[0][1]);
     set_pin_low(motor_pin[0][2], motor_pin[0][3]);
     pwm_set_polarity(motor_pin[0][4], motor_pin[0][5], 1);
@@ -149,12 +149,14 @@ void motor_init()
     set_pin_high(motor_pin[1][0], motor_pin[1][1]);
     set_pin_low(motor_pin[1][2], motor_pin[1][3]);
     pwm_set_polarity(motor_pin[1][4], motor_pin[1][5], 1);
+
+    regist_cmd_cb(BA_MOTION_CMD, parser_motion_cmd);
 }
 
 int parser_motion_cmd(struct s_base_motion *cmd)
 {
     if(cmd == NULL)  return -1;
-
+printf("left=%d,right=%d\n", cmd->left_action, cmd->right_action);
     if(cmd->left_action == START_ACTION)
     {
         start_chassis();
@@ -206,23 +208,31 @@ int parser_motion_cmd(struct s_base_motion *cmd)
     return 0;
 }
 
-int my_motor_speed(void *data)
+void *detect_left_speed(void *data)
 {
-    int i;
+    u_int32 cnt=0;
     printf("get_motor_left_speed...\n");
-    for(i = 0;i < 32;i++)
+    for(;;)
     {
-        if((left_speed != NULL) && (left_speed[i] != 0))
-        {
-            printf("left[%d]: 0x%x  \n", i, left_speed[i]);
-        }
-        if((right_speed != NULL) && (right_speed[i] != 0))
-        {
-            printf("right[%d]: 0x%x  \n", i, right_speed[i]);
-        }
+        printf("left flag=%d,SPEED=%d\n", *left_flag, *left_speed);
+        sleep(1);
     }
     printf("\n");
 
-    return 0;
+    return NULL;
+}
+
+void *detect_right_speed(void *data)
+{
+    u_int32 cnt=0;
+    printf("get_motor_right_speed...\n");
+    for(;;)
+    {
+        printf("right flag=%d,SPEED=%d\n", *right_flag, *right_speed);
+        sleep(1);
+    }
+    printf("\n");
+
+    return NULL;
 }
 

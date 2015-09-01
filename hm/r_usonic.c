@@ -4,6 +4,7 @@
 #include <sys/time.h>
 #include <errno.h>
 
+#include "pub.h"
 #include "prussdrv.h"
 #include "pruss_intc_mapping.h"
 
@@ -17,7 +18,7 @@
 #define MAX_USONIC_DETECT_TM  0x1ffff0
 
 unsigned char usonic_addr[MAX_USONIC];
-unsigned int usonic_distance[MAX_USONIC];
+u_int32 usonic_distance[MAX_USONIC];
 
 int change_usonic_addr(int fd, unsigned char new_addr)
 {
@@ -46,10 +47,13 @@ int usonic_init()
     return 0;
 }
 
+extern int report_distance_info(struct s_hm_distance *data);
 int usonic_detect_item(int item)
 {
     int dist_hi, dist_lo;
+    struct s_hm_distance data;
     int fd_usonic = i2c_open(2, usonic_addr[item]);
+printf("fd_usonic=%d\n", fd_usonic);
 
     if(i2c_smbus_write_byte_data(fd_usonic, 2, 0xb4) < 0)
        printf("WRITE error(%d):%s\n", errno, strerror(errno));
@@ -64,7 +68,11 @@ int usonic_detect_item(int item)
         dist_lo = 0;
 
     usonic_distance[item] = dist_hi*255 + dist_lo;
-    printf("distance=%d\n",usonic_distance[item]);
+//    printf("distance=%d\n",usonic_distance[item]);
+
+    data.ssonic_id=0;
+    data.distance=usonic_distance[item];
+    report_distance_info(&data);
 
     if(fd_usonic >= 0)
         i2c_close(fd_usonic);

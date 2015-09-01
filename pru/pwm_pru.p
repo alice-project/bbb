@@ -1,0 +1,229 @@
+.origin 0
+.entrypoint START
+
+#include "hm_pru.hp"
+
+#define PWM_PIN1_BASE            0
+#define PWM_PIN1_INDEX           0
+
+#define PWM_PIN2_BASE            0
+#define PWM_PIN2_INDEX           0
+
+#define PWM_PIN3_BASE            0
+#define PWM_PIN3_INDEX           0
+
+#define PWM_PIN4_BASE            0
+#define PWM_PIN4_INDEX           0
+
+
+/*  parameters of each PWM
+    offset 0: occupy cycle
+    offset 4: idle cycle
+ */
+
+START:
+
+//set ARM such that PRU can write to GPIO
+LBCO r0, C4, 4, 4
+CLR r0, r0, 4
+SBCO r0, C4, 4, 4
+
+MOV r0, CONTROL_0
+MOV r1, 0
+
+/* the expired cycle of each PWM is saved in GPR:
+    r27/r26/r25/r24
+ */
+/*MOV r28, 0
+mov r2, 228
+LSL r3, r2, 16
+MOV r4, 58020
+ADD r27, r3, r4  //15000000
+SBCO r27, CONST_PRUDRAM, 4, 4 //Load occupy cycle of PWM1
+MOV r26, r27
+SBCO r26, CONST_PRUDRAM, 12, 4 //Load occupy cycle of PWM2
+MOV r25, r27
+SBCO r25, CONST_PRUDRAM, 20, 4 //Load occupy cycle of PWM3
+MOV r24, r27
+SBCO r24, CONST_PRUDRAM, 28, 4 //Load occupy cycle of PWM4
+
+mov r2, 76
+LSL r3, r2, 16
+MOV r4, 19340
+ADD r27, r3, r4  //5000000
+SBCO r27, CONST_PRUDRAM, 0, 4 //Load occupy cycle of PWM1
+MOV r26, r27
+SBCO r26, CONST_PRUDRAM, 8, 4 //Load occupy cycle of PWM2
+MOV r25, r27
+SBCO r25, CONST_PRUDRAM, 16, 4 //Load occupy cycle of PWM3
+MOV r24, r27
+SBCO r24, CONST_PRUDRAM, 24, 4 //Load occupy cycle of PWM4
+*/
+
+SBBO r1, r0, 0xC, 4  // clear the cycle counter first
+
+// r29 is the state of each PWM, 1: occupy state 0: idle state
+mov r29, 0
+
+mov r2, 1 << PWM_PIN1_INDEX
+MOV r3, PWM_PIN1_BASE | GPIO_SETDATAOUT
+SBBO r2, r3, 0, 4
+SET r29.t0
+
+mov r2, 1 << PWM_PIN2_INDEX
+MOV r3, PWM_PIN2_BASE | GPIO_SETDATAOUT
+SBBO r2, r3, 0, 4
+SET r29.t1
+
+mov r2, 1 << PWM_PIN3_INDEX
+MOV r3, PWM_PIN3_BASE | GPIO_SETDATAOUT
+SBBO r2, r3, 0, 4
+SET r29.t2
+
+mov r2, 1 << PWM_PIN4_INDEX
+MOV r3, PWM_PIN4_BASE | GPIO_SETDATAOUT
+SBBO r2, r3, 0, 4
+SET r29.t3
+
+
+
+MAIN_LOOP:
+
+JUDGE_PWM1:
+SBBO r1, r0, 0xC, 4  // load current cycle counter
+QBBS PWM1_IS_WRAPPED, r28.t0
+QBGE PWM1_TIME_EXPIRED, r1, r27
+JMP JUDGE_PWM2
+
+PWM1_IS_WRAPPED:
+QBLE PWM1_TIME_EXPIRED, r1, r27
+JMP JUDGE_PWM2
+
+PWM1_TIME_EXPIRED:
+QBBS PWM1_IS_OCCUPY, r29.t0
+mov r2, 1 << PWM_PIN1_INDEX
+MOV r3, PWM_PIN1_BASE | GPIO_SETDATAOUT
+SBBO r2, r3, 0, 4
+SET r29.t0
+LBCO r4, CONST_PRUDRAM, 0, 4 //Load occupy cycle of PWM1
+JMP PWM1_WRAP_JUDGE
+
+PWM1_IS_OCCUPY:
+mov r2, 1 << PWM_PIN1_INDEX
+MOV r3, PWM_PIN1_BASE | GPIO_CLEARDATAOUT
+SBBO r2, r3, 0, 4
+CLR r29.t0
+LBCO r4, CONST_PRUDRAM, 4, 4 //Load idle cycle of PWM1
+
+PWM1_WRAP_JUDGE:
+ADD r27, r1, r4
+QBGT PWM1_NEED_WRAP, r1, r27
+CLR r28.t0
+PWM1_NEED_WRAP:
+SET r28.t0
+
+JUDGE_PWM2:
+SBBO r1, r0, 0xC, 4  // load current cycle counter
+QBBS PWM2_IS_WRAPPED, r28.t1
+QBGE PWM2_TIME_EXPIRED, r1, r26
+JMP JUDGE_PWM3
+
+PWM2_IS_WRAPPED:
+QBLE PWM2_TIME_EXPIRED, r1, r26
+JMP JUDGE_PWM3
+
+PWM2_TIME_EXPIRED:
+QBBS PWM2_IS_OCCUPY, r29.t1
+mov r2, 1 << PWM_PIN2_INDEX
+MOV r3, PWM_PIN2_BASE | GPIO_SETDATAOUT
+SBBO r2, r3, 0, 4
+SET r29.t1
+LBCO r4, CONST_PRUDRAM, 8, 4 //Load occupy cycle of PWM2
+JMP PWM1_WRAP_JUDGE
+
+PWM2_IS_OCCUPY:
+mov r2, 1 << PWM_PIN2_INDEX
+MOV r3, PWM_PIN2_BASE | GPIO_CLEARDATAOUT
+SBBO r2, r3, 0, 4
+CLR r29.t1
+LBCO r4, CONST_PRUDRAM, 10, 4 //Load idle cycle of PWM2
+
+PWM2_WRAP_JUDGE:
+ADD r26, r1, r4
+QBGT PWM2_NEED_WRAP, r1, r26
+CLR r28.t1
+PWM2_NEED_WRAP:
+SET r28.t1
+
+
+JUDGE_PWM3:
+SBBO r1, r0, 0xC, 4  // load current cycle counter
+QBBS PWM3_IS_WRAPPED, r28.t2
+QBGE PWM3_TIME_EXPIRED, r1, r25
+JMP JUDGE_PWM4
+
+PWM3_IS_WRAPPED:
+QBLE PWM1_TIME_EXPIRED, r1, r25
+JMP JUDGE_PWM4
+
+PWM3_TIME_EXPIRED:
+QBBS PWM3_IS_OCCUPY, r29.t2
+mov r2, 1 << PWM_PIN3_INDEX
+MOV r3, PWM_PIN3_BASE | GPIO_SETDATAOUT
+SBBO r2, r3, 0, 4
+SET r29.t2
+LBCO r4, CONST_PRUDRAM, 16, 4 //Load occupy cycle of PWM3
+JMP PWM3_WRAP_JUDGE
+
+PWM3_IS_OCCUPY:
+mov r2, 1 << PWM_PIN3_INDEX
+MOV r3, PWM_PIN3_BASE | GPIO_CLEARDATAOUT
+SBBO r2, r3, 0, 4
+CLR r29.t2
+LBCO r4, CONST_PRUDRAM, 20, 4 //Load idle cycle of PWM3
+
+PWM3_WRAP_JUDGE:
+ADD r25, r1, r4
+QBGT PWM3_NEED_WRAP, r1, r25
+CLR r28.t2
+PWM3_NEED_WRAP:
+SET r28.t2
+
+
+JUDGE_PWM4:
+SBBO r1, r0, 0xC, 4  // load current cycle counter
+QBBS PWM4_IS_WRAPPED, r28.t3
+QBGE PWM4_TIME_EXPIRED, r1, r24
+JMP JUDGE_PWM1
+
+PWM4_IS_WRAPPED:
+QBLE PWM4_TIME_EXPIRED, r1, r24
+JMP JUDGE_PWM1
+
+PWM4_TIME_EXPIRED:
+QBBS PWM4_IS_OCCUPY, r29.t3
+mov r2, 1 << PWM_PIN4_INDEX
+MOV r3, PWM_PIN4_BASE | GPIO_SETDATAOUT
+SBBO r2, r3, 0, 4
+SET r29.t3
+LBCO r4, CONST_PRUDRAM, 24, 4 //Load occupy cycle of PWM4
+JMP PWM4_WRAP_JUDGE
+
+PWM4_IS_OCCUPY:
+mov r2, 1 << PWM_PIN4_INDEX
+MOV r3, PWM_PIN4_BASE | GPIO_CLEARDATAOUT
+SBBO r2, r3, 0, 4
+CLR r29.t3
+LBCO r4, CONST_PRUDRAM, 28, 4 //Load idle cycle of PWM4
+
+PWM4_WRAP_JUDGE:
+ADD r24, r1, r4
+QBGT PWM4_NEED_WRAP, r1, r24
+CLR r28.t3
+PWM4_NEED_WRAP:
+SET r28.t3
+
+
+JMP MAIN_LOOP
+
+

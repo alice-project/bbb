@@ -259,7 +259,7 @@ int set_pin_high(int connector, int pin)
 {
     int port = (connector == 8)?pin-1:pin-1+46;
 
-    *((unsigned int *)(gpio_addr[gpio_bank[port]] + GPIO_SETDATAOUT_OFFSET)) = gpio_bitfield[port];
+    *((unsigned int *)(gpio_addr[gpio_bank[port]] + GPIO_SETDATAOUT_OFFSET)) |= gpio_bitfield[port];
 
     return 0;
 }
@@ -268,7 +268,32 @@ int set_pin_low(int connector, int pin)
 {
     int port = (connector == 8)?pin-1:pin-1+46;
 
-    *((unsigned int *)(gpio_addr[gpio_bank[port]] + GPIO_CLEARDATAOUT_OFFSET)) = gpio_bitfield[port];
+    *((unsigned int *)(gpio_addr[gpio_bank[port]] + GPIO_CLEARDATAOUT_OFFSET)) |= gpio_bitfield[port];
+
+    return 0;
+}
+
+int set_pin_irq_mode(int connector, int pin, enum GPIO_IRQ_MODE mode)
+{
+    int port = (connector == 8)?pin-1:pin-1+46;
+
+    switch(mode)
+    {
+        case GPIO_IRQ_LOW_LEVEL:
+            *((unsigned int *)(gpio_addr[gpio_bank[port]] + GPIO_LEVELDETECT0_OFFSET)) |= gpio_bitfield[port];
+            break;
+        case GPIO_IRQ_HIGH_LEVEL:
+            *((unsigned int *)(gpio_addr[gpio_bank[port]] + GPIO_LEVELDETECT1_OFFSET)) |= gpio_bitfield[port];
+            break;
+        case GPIO_IRQ_RISING_EDGE:
+            *((unsigned int *)(gpio_addr[gpio_bank[port]] + GPIO_RISINGDETECT_OFFSET)) |= gpio_bitfield[port];
+            break;
+        case GPIO_IRQ_FALLING_EDGE:
+            *((unsigned int *)(gpio_addr[gpio_bank[port]] + GPIO_FALLINGDETECT_OFFSET)) |= gpio_bitfield[port];
+            break;
+        default:
+            return -1;
+    }
 
     return 0;
 }
@@ -300,7 +325,7 @@ static print_all_mode()
             printf("%s\n", gpio_name[i][0]);
         else
         {
-            printf("%p: 0x%x,%s\n", (gpio_mode_offset[i]), *(unsigned int *)(ctrl_addr + gpio_mode_offset[i]), gpio_name[i][*(unsigned int *)(ctrl_addr + gpio_mode_offset[i]) & 0x7]);
+            printf("0x%x: 0x%x,%s\n", (gpio_mode_offset[i]), *(unsigned int *)(ctrl_addr + gpio_mode_offset[i]), gpio_name[i][*(unsigned int *)(ctrl_addr + gpio_mode_offset[i]) & 0x7]);
         }
 
     }
@@ -406,10 +431,10 @@ int gpio_exit()
     if(gpio_fd > 0)
     {
         munmap((void *)ctrl_addr, CONTROL_LEN);
-        munmap((void *)gpio_base[0], GPIOX_LEN);
-        munmap((void *)gpio_base[1], GPIOX_LEN);
-        munmap((void *)gpio_base[2], GPIOX_LEN);
-        munmap((void *)gpio_base[3], GPIOX_LEN);
+        munmap((void *)&gpio_base[0], GPIOX_LEN);
+        munmap((void *)&gpio_base[1], GPIOX_LEN);
+        munmap((void *)&gpio_base[2], GPIOX_LEN);
+        munmap((void *)&gpio_base[3], GPIOX_LEN);
 
         close(gpio_fd);
     }

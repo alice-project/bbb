@@ -14,9 +14,13 @@
 
 void BASE_LOG(char *buffer);
 
+extern void set_light1_red();
+extern void set_light1_yellow();
+extern void set_light1_green();
+extern void set_ssonic1_dist(int d);
+
 extern unsigned int d_my_ipaddr;
 extern unsigned char *video_frame;
-unsigned int offset=0;
 unsigned int frame_size=0;
 
 GSList *g_watchers = NULL;
@@ -54,7 +58,7 @@ static gboolean ant_comes(GSocketService    *service,
     return TRUE;
 }
 
-static unsigned char rcvbuffer[1500];
+static unsigned char rcvbuffer[MAX_VIDEO_FRAME_MSG];
 void *hm_func(void *data)
 {
     int n;
@@ -63,6 +67,7 @@ void *hm_func(void *data)
     struct s_hm *hm = (struct s_hm *)data;
     int slen;
     struct sockaddr_in s_peer;
+    struct s_hm_distance *distance;
 
     if(hm->fd < 0)
     {
@@ -77,43 +82,44 @@ void *hm_func(void *data)
         if(hm->fd < 0)
             break;
         
-        n = recvfrom(hm->fd, rcvbuffer, 1500, 0, (struct sockaddr *)&s_peer, (socklen_t *)&slen);
+        n = recvfrom(hm->fd, rcvbuffer, MAX_VIDEO_FRAME_MSG, 0, (struct sockaddr *)&s_peer, (socklen_t *)&slen);
 
         if (n <= 0) 
         {
             usleep(10);
             continue;
         }
-printf("n=%d\n", n);
-/*int i;
-for(i=0;i<256;i++)
-{
-printf("%x,", *(rcvbuffer+i));
-}
-printf("\n\n\n");
-*/
+
         msg = (struct s_com *)rcvbuffer;
         switch(msg->code)
         {
             case HM_REPORTING:
             {
-                g_printf("received HM_REPORTING message from (%d)\n", msg->id);
+//                g_printf("received HM_REPORTING message from (%d)\n", msg->id);
+                break;
+            }
+            case HM_DISTANCE:
+            {
+                distance = (struct s_hm_distance *)(rcvbuffer + sizeof(struct s_com));
+//                g_printf("received HM_DISTANCE message from (%d): ", msg->id);
+//                g_printf("ssonic(%d).distance=%d\n", distance->ssonic_id, distance->distance);
+set_ssonic1_dist(distance->distance);
+if(distance->distance>200)
+    set_light1_green();
+else if(distance->distance>100)
+    set_light1_yellow();
+else
+    set_light1_red();
+
                 break;
             }
             case HM_CAMERA:
             {
-                g_printf("received HM_CAMERA message from (%d)\n", msg->id);
                 video = (struct s_hm_video *)(rcvbuffer+sizeof(struct s_com));
-//                memcpy(video_frame+offset, video->data, video->length);
-                offset += video->length;
-                frame_size += video->length;
-printf("length=%d\n", video->length);
-                if (!(msg->flags & VIDEO_MORE_PACKETS))
-                {
-//                    update_video(video_frame, 640, 480);
-                    offset = 0;
-                    frame_size = 0;
-                }
+                g_printf("received HM_CAMERA message from (%d), size=%d\n", msg->id, video->size);
+                memcpy(video_frame, video->data, video->size);
+                frame_size = video->size;
+//                update_video(video_frame, 640, 480);
                 break;
             }
         }
@@ -145,11 +151,13 @@ gpointer start_watching()
     memset((void *)&s_addr, 0, sizeof(s_addr));
     s_addr.sin_family = AF_INET;
     s_addr.sin_addr.s_addr = htonl(d_my_ipaddr);
-    s_addr.sin_port = htons(BASE_PORT);
-    
+    s_addr.sin_port = htons(HM_PORT1);
+
     if(bind(sw_sockfd, (struct sockaddr *)&s_addr, sizeof(s_addr)) < 0)
     {
         BASE_LOG("[WATCHER] Bind failed\n");
+printf("d_my_ipaddr=%d.%d.%d.%d\n", d_my_ipaddr>>24, (d_my_ipaddr>>16)&255,(d_my_ipaddr>>8)&255,d_my_ipaddr&255);
+        perror("BIND FAILED\n");
         return NULL;
     }
     

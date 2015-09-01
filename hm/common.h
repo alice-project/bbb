@@ -20,16 +20,10 @@ typedef signed char    int8;
 typedef signed short   int16;
 typedef signed int     int32;
 
-
+typedef int (*MSG_HANDLER)(u_int8 *msg);
 typedef int (*msg_func)(void *p);
 
 typedef int (*timer_func)(void *p);
-
-struct s_base_info
-{
-    int fd;
-    struct sockaddr_in m_addr;
-};
 
 struct s_hm_state
 {
@@ -54,6 +48,9 @@ struct s_hm_state_flag
 
 #define MY_NAME  "Hanma"
 
+#define min(a,b) ((a)<(b)?(a):(b))
+
+int regist_cmd_cb(u_int8 id, MSG_HANDLER cb);
 
 #endif
 

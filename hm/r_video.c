@@ -38,11 +38,15 @@
 #include <fcntl.h>
 #include <syslog.h>
 
+#include "pub.h"
 #include "r_video.h"
+#include "r_list.h"
 
 static globals global;
 
 extern struct s_base_info m_base;
+
+struct r_image_list r_img_head;
 
 /******************************************************************************
 Description.: pressing CTRL+C sends signals to this process instead of just
@@ -58,6 +62,57 @@ void signal_handler(int sig)
     return;
 }
 
+void r_video_safe_exit()
+{
+	struct r_list *node;
+    struct r_image_list *entry;
+
+    while(!list_is_empty(&r_img_head.list)) {
+        node = r_img_head.list.next;
+        list_del(node);
+        entry = list_entry(node, struct r_image_list, list);
+		if(entry->buf)
+		{
+            free(entry->buf);
+            free(node);
+		}
+    }
+}
+
+
+int image_list_init()
+{
+    struct r_image_list *node;
+    void *buf;
+    int i;
+
+    INIT_LIST_HEAD(&r_img_head.list);
+
+    for(i=0;i<64;i++)
+    {
+        node = (struct r_image_list *)malloc(sizeof(struct r_image_list));
+        if(buf == NULL)
+        {
+            printf("not enough memory!\n");
+            goto free_all;
+        }
+        buf = malloc(MAX_VIDEO_FRAME_MSG);
+        if(buf == NULL)
+        {
+            printf("not enough memory!\n");
+            goto free_all;
+        }
+        node->buf = buf;
+        list_append(&r_img_head.list, node->list);
+    }
+    
+    return 0;
+
+free_all:
+    r_video_safe_exit();
+    return -1;
+}
+
 
 /******************************************************************************
 Description.:
@@ -67,6 +122,9 @@ Return Value:
 int video_init(int id)
 {
     int ret;
+
+    image_list_init();
+
     global.in[id].param.parameters = "";
     global.in[id].param.global = &global;
     global.in[id].param.id = id;
@@ -76,7 +134,7 @@ int video_init(int id)
     global.out[id].param.id = id;
 
     ret = input_init(&global.in[id].param, id);
-    ret |= output_init(&global.out[id].param);
+//    ret |= output_init(&global.out[id].param);
     return ret;
 }
 
@@ -84,7 +142,7 @@ int video_start(int id)
 {
     int ret;
     ret = input_run(id);
-    ret |= output_run(id);
+//    ret |= output_run(id);
     return ret;
 }
 
@@ -92,7 +150,7 @@ int video_stop(int id)
 {
     int ret;
     ret = input_stop(id);
-    ret |= output_stop(id);
+//    ret |= output_stop(id);
     return ret;
 }
 

@@ -34,9 +34,13 @@
 #define CTPPR_1         0x2202C
 
 
-#define MOTOR_DECODER_ADDR   0x4804c000
-#define LEFT_COUNT_BIT   14
-#define RIGHT_COUNT_BIT  15
+#define M1_DECODER_ADDR         0x481ac000
+#define M1_DECODER1_COUNT_BIT   6
+#define M1_DECODER2_COUNT_BIT   7
+
+#define M2_DECODER_ADDR         0x481AE000
+#define M2_DECODER1_COUNT_BIT   15
+#define M2_DECODER2_COUNT_BIT   16
 
 #define GPIO_DATAIN          0x138
 #define GPIO_CLEARDATAOUT    0x190
@@ -49,68 +53,74 @@ DELAY:
     QBNE DELAY, r10, 0xe0
 .endm
 
-
 /*************** PRU0 ***********************/
 .macro RIGHT_MOTOR_SPEED_PROC
-.mparam pru_bit
-    MOV r1, MOTOR_DECODER_ADDR | GPIO_SETDATAOUT
-    MOV r2, MOTOR_DECODER_ADDR | GPIO_CLEARDATAOUT
-    MOV r3, CONTROL_0
-    MOV r4, 334
-    MOV r5, 0
+    MOV r0, CONTROL_0
+    MOV r1, 334       // 
+    MOV r2, 0         // r2 stores the cycle counter
+    MOV r3, 0xffffffff    // r3 stores infinite value
+    MOV r4, 0         // r4 stores the pulse count of the decoder
+    MOV r5, 0         // flags, =1 starts to decoder
 
-    SBBO r5, r3, 0xC, 4  // clear the cycle counter first
+LOOP:
+//    LBCO r5, CONST_PRUDRAM, 0, 4
+//    QBBC LOOP, r5, 0
+    
+    SBCO r3, CONST_PRUDRAM, 4, 4  // initialize the result to be "infinite"
+    SBBO r2, r0, 0xC, 4  // clear the cycle counter first
 
 WAIT_FOR_PULSE:
-    WBS r31, pru_bit
-    SBBO r5, r3, 0xC, 4  // clear the cycle counter first
-    LBBO r6, r3, 0xC, 4  // read the cycle counter
-    WBC r31, pru_bit
-    ADD r5, r5, 1
-    QBGT WAIT_FOR_PULSE, r5, r4
+    WBS r30, 14
+    WBC r30, 14
+    ADD r4, r4, 1      
+    QBGT WAIT_FOR_PULSE, r4, r1
 
-    LBBO r6, r3, 0xC, 4  // read the cycle counter
+    LBBO r2, r0, 0xC, 4  // read the cycle counter
 
 STORE_RESULT:
     //Store result in into memory using constant table
-    SBCO r6, CONST_PRUDRAM, 4, 4
-    JMP ENDM
+    SBCO r2, CONST_PRUDRAM, 4, 4
+
+    CLR r5, 0
+    SBCO r5, CONST_PRUDRAM, 0, 4
+    JMP LOOP
 
 ENDM:
 
 .endm
 
 
-
-
 /*************** PRU1 ***********************/
 .macro LEFT_MOTOR_SPEED_PROC
-.mparam pru_bit
-//    MOV r0, 1<<power_bit
-    MOV r1, MOTOR_DECODER_ADDR | GPIO_SETDATAOUT
-    MOV r2, MOTOR_DECODER_ADDR | GPIO_CLEARDATAOUT
-    MOV r3, CONTROL_1
-    MOV r4, 334
-    MOV r5, 0
+    MOV r0, CONTROL_1
+    MOV r1, 334       // 
+    MOV r2, 0         // r2 stores the cycle counter
+    MOV r3, 0xffffffff    // r3 stores infinite value
+    MOV r4, 0         // r4 stores the pulse count of the decoder
+    MOV r5, 0         // flags, =1 starts to decoder
 
-    SBBO r5, r3, 0xC, 4  // clear the cycle counter first
-    SBBO r0, r1, 0, 4  // set decoder power high
+LOOP:
+//    LBCO r5, CONST_PRUDRAM, 0, 4
+//   QBBC LOOP, r5, 0
+    
+    SBCO r3, CONST_PRUDRAM, 4, 4  // initialize the result to be "infinite"
+    SBBO r2, r0, 0xC, 4  // clear the cycle counter first
 
 WAIT_FOR_PULSE:
-    WBS r31, pru_bit
-    SBBO r5, r3, 0xC, 4  // clear the cycle counter first
-    LBBO r6, r3, 0xC, 4  // read the cycle counter
-    WBC r31, pru_bit
-    ADD r5, r5, 1
-    QBGT WAIT_FOR_PULSE, r5, r4
+    WBS r31, 8
+    WBC r31, 8
+    ADD r4, r4, 1      
+    QBGT WAIT_FOR_PULSE, r4, r1
 
-
-    LBBO r6, r3, 0xC, 4  // read the cycle counter
+    LBBO r2, r0, 0xC, 4  // read the cycle counter
 
 STORE_RESULT:
     //Store result in into memory using constant table
-    SBCO r6, CONST_PRUDRAM, 4, 4
-    JMP ENDM
+    SBCO r2, CONST_PRUDRAM, 4, 4
+
+    CLR r5, 0
+    SBCO r5, CONST_PRUDRAM, 0, 4
+    JMP LOOP
 
 ENDM:
 

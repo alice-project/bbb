@@ -1,0 +1,16 @@
+#ifndef __HM_CONFIG_H__
+#define __HM_CONFIG_H__
+#define ENABLE_CROSS_COMPILE 1
+#define ENABLE_GPIO_MMAP 1
+#undef ENABLE_GPIO_DTS
+#define ENABLE_PWM_DTS 1
+#define ENABLE_PWM_PRUSS 1
+#undef ENABLE_I2C_FUNC
+#undef ENABLE_MPU6050
+#define ENABLE_MOTOR 1
+#undef ENABLE_USONIC
+#undef ENABLE_LED
+#undef ENABLE_SERVO
+#undef ENABLE_VIDEO
+#undef ENABLE_WIFI_LOC
+#endif /* __HM_CONFIG_H__ */

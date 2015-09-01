@@ -7,10 +7,13 @@ P9.13   gpio1[1]    0x27        right dc motor dir control
 P9.14   gpio1[0]    0x27        right dc motor dir control
 P8.19   ehrpwm2A    0x4         right dc motor speed control
 
+P8.12	pr1_pru0_pru_r30_14		right dc encoder
+P8.27	pr1_pru1_pru_r31_8		left dc encoder
+
 P9.14   ehrpwm1A    0x6
 P9.16   ehrpwm1B    0x6
-P9.21   ehrpwm0B    0x3
-P9.22   ehrpwm0A    0x3
+P9.21   ehrpwm0B    0x3         servo motor
+P9.22   ehrpwm0A    0x3         servo motor
 
 P9.15   gpio1_16    0x27        LED RED
 P9.16   gpio1_19    0x27        LED GREEN

@@ -32,10 +32,12 @@
 	/* ------ PWM ------ */
 		"P8.13",    /* EHRPWM2B */
 		"P8.19",    /* EHRPWM2A */
+		"P9.21",    /* EHRPWM0B */
 		"P9.22",    /* EHRPWM0A */
-		"ehrpwm0A",
 		"ehrpwm2A",
 		"ehrpwm2B",
+		"ehrpwm0A",
+		"ehrpwm0B",
 
 	/* ------ DC MOTOR DIRECTION ------ */
 		"P9.11",    /* gpio0.30 */
@@ -44,10 +46,8 @@
 		"P9.14",    /* gpio1.18 */
 
 	/* ------ DC MOTOR Decoder ------ */
-        "P8.15",    /* pr1_pru0_pru_r31_15, leftside */
-        "P8.16",    /* pr1_pru0_pru_r31_14, leftside */
-        "P8.45",    /* pr1_pru1_pru_r31_0,  rightside */
-        "P8.46",    /* pr1_pru1_pru_r31_1,  rightside */
+        "P8.12",    /* pr1_pru0_pru_r30_14,  right side */
+        "P8.27",    /* pr1_pru1_pru_r31_8,  leftside */
 		"pru0",
 		"pru1",
 		"pruss",
@@ -61,6 +61,7 @@
 		/* the pin header uses */
 		"P9.18",	/* i2c1_sda */
 		"P9.17",	/* i2c1_scl */
+        "P8.7",     /* interrupt flag */
 		/* the hardware ip uses */
 		"i2c1";
 
@@ -133,6 +134,10 @@
 				pinctrl-single,pins = <0x20  0x4>; /* P8_19 | MODE 4 */
 			};
 
+			P9_21_ehrpwm_pin: P9_21_ehrpwm_pin {
+				pinctrl-single,pins = <0x154  0x3>; /* P9_21 | MODE 3 */
+			};
+
 			P9_22_ehrpwm_pin: P9_22_ehrpwm_pin {
 				pinctrl-single,pins = <0x150  0x3>; /* P9_22 | MODE 3 */
 			};
@@ -165,12 +170,23 @@
 				status		= "okay";
 			};
 
-			servo_motor_pwm {
+			servo_motor1_pwm {
 				compatible	= "pwm_test";
 				pwms		= <&ehrpwm0 0 20000000 0>;
-				pwm-names	= "servo_motor";
+				pwm-names	= "servo_motor1";
 				pinctrl-names	= "default";
 				pinctrl-0	= <&P9_22_ehrpwm_pin>;
+				enabled		= <0>;
+				duty		= <1500000>;
+				status		= "okay";
+			};
+
+			servo_motor2_pwm {
+				compatible	= "pwm_test";
+				pwms		= <&ehrpwm0 1 20000000 0>;
+				pwm-names	= "servo_motor2";
+				pinctrl-names	= "default";
+				pinctrl-0	= <&P9_21_ehrpwm_pin>;
 				enabled		= <0>;
 				duty		= <1500000>;
 				status		= "okay";
@@ -202,16 +218,14 @@
 			motor_decoder_pins: motor_decoder_pins {
 				status = "okay";
 				pinctrl-single,pins = <
-					0x3c 0x36  /* pr1_pru0_pru_r31_15, leftside, P8_15, mode6 in */
-					0x38 0x36  /* pr1_pru0_pru_r31_14, leftside, P8_16, mode6 in */
-					0xa0 0x36  /* pr1_pru1_pru_r31_0, P8_45, mode6 in */
-					0xa4 0x36  /* pr1_pru1_pru_r31_1, P8_46, mode6 in */
+					0x12 0x27   /* pr1_pru0_pru_r30_14, rightside, P8_12, mode7 in */
+					0x0 0x27   /* pr1_pru1_pru_r31_8, leftside, P8_25, mode7 in */
 				>;
 			};
 		};
 	};
 
-	fragment@41 {
+/*	fragment@41 {
 		target = <&ocp>;
 		__overlay__ {
 			motor_des {
@@ -222,32 +236,20 @@
 
 				decoder1 {
 					gpio-name = "motor_decoders:decoder1";
-					gpio = <&gpio2 15 0>;
+					gpio = <&gpio1 12 0>;
 					input;
 					init-low;
 				};
 				decoder2 {
 					gpio-name = "motor_decoders:decoder2";
-					gpio = <&gpio2 14 0>;
-					input;
-					init-low;
-				};
-				decoder3 {
-					gpio-name = "motor_decoders:decoder3";
-					gpio = <&gpio3 6 0>;
-					input;
-					init-low;
-				};
-				decoder4 {
-					gpio-name = "motor_decoders:decoder4";
-					gpio = <&gpio3 7 0>;
+					gpio = <&gpio1 0 0>;
 					input;
 					init-low;
 				};
 			};
 		};
 	};
-
+*/
 	fragment@42 {
 		target = <&pruss>;
 		__overlay__ {
@@ -259,38 +261,13 @@
 	fragment@50 {
 		target = <&am33xx_pinmux>;
 		__overlay__ {
-			bb_i2c1_pins: pinmux_bb_i2c1_pins {
+			hm_gyro_pins: pinmux_hm_gyro_pins {
 				pinctrl-single,pins = <
 					0x158 0x72	/* spi0_d1.i2c1_sda, SLEWCTRL_SLOW | INPUT_PULLUP | MODE2 */
 					0x15c 0x72	/* spi0_cs0.i2c1_scl, SLEWCTRL_SLOW | INPUT_PULLUP | MODE2 */
+                    0x90 0x37   /* gpio2[2] acts as the interrupt flag */
 				>;
 			};
-		};
-	};
-
-	fragment@51 {
-		target = <&i2c1>;	/* i2c1 is numbered correctly */
-		__overlay__ {
-			status = "okay";
-			pinctrl-names = "default";
-			pinctrl-0 = <&bb_i2c1_pins>;
-
-			/* this is the configuration part */
-			clock-frequency = <100000>;
-
-			#address-cells = <1>;
-			#size-cells = <0>;
-
-			/* add any i2c devices on the bus here */
-
-			// commented out example of a touchscreen (taken from BB-BONE-LCD7-01-00A4) */
-			// maxtouch@4a {
-			//	compatible = "mXT224";
-			//	reg = <0x4a>;
-			//	interrupt-parent = <&gpio4>;
-			//	interrupts = <19 0x0>;
-			//	atmel,irq-gpio = <&gpio4 19 0>;
-			// };
 		};
 	};
 

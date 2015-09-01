@@ -59,7 +59,7 @@ gpointer multicast_guard()
     socklen = sizeof(struct sockaddr_in);
     memset(&remote_addr, 0, socklen);
     remote_addr.sin_family = AF_INET;
-    remote_addr.sin_port = htons(BASE_PORT);
+    remote_addr.sin_port = htons(HM_PORT2);
 
     if (inet_pton(AF_INET, MUL_IPADDR, &remote_addr.sin_addr) <= 0) 
     {
@@ -98,6 +98,17 @@ gpointer multicast_guard()
                     memcpy(hm_name, rcv_buf+sizeof(struct s_com), sizeof(struct s_request_base));
 
                     /* response with base IP */
+                    n = sendto(mc_sockfd, snd_buf, sizeof(snd_buf), 0, (struct sockaddr *) &remote_addr, sizeof(struct sockaddr_in));
+
+                    break;
+                }
+                case MC_REQUEST_HM_ADDR:
+                {
+                    snd_msg->code = BA_REPLY_HM_ADDR;
+                    payload = (struct s_mc_ipaddr *)(snd_msg + sizeof(struct s_com));
+                    payload->ipaddr = htonl(d_my_ipaddr);
+                    memcpy(hm_name, rcv_buf+sizeof(struct s_com), sizeof(struct s_request_base));
+
                     n = sendto(mc_sockfd, snd_buf, sizeof(snd_buf), 0, (struct sockaddr *) &remote_addr, sizeof(struct sockaddr_in));
 
                     break;

@@ -37,6 +37,7 @@ THE SOFTWARE.
 #ifndef __R_MPU6050_H__
 #define __R_MPU6050_H__
 
+#include "common.h"
 #include "i2c_func.h"
 
 
@@ -398,7 +399,105 @@ THE SOFTWARE.
 
 // note: DMP code memory blocks defined at end of header file
 
+
+#define INV_X_GYRO      (0x40)
+#define INV_Y_GYRO      (0x20)
+#define INV_Z_GYRO      (0x10)
+#define INV_XYZ_GYRO    (INV_X_GYRO | INV_Y_GYRO | INV_Z_GYRO)
+#define INV_XYZ_ACCEL   (0x08)
+#define INV_XYZ_COMPASS (0x01)
+
+struct int_param_s
+{
+#if defined EMPL_TARGET_MSP430 || defined MOTION_DRIVER_TARGET_MSP430
+	void (*cb)(void);
+	u_int16 pin;
+	u_int8 lp_exit;
+	u_int8 active_low;
+#elif defined EMPL_TARGET_UC3L0
+	u_int32 pin;
+	void (*cb)(volatile void*);
+	void *arg;
+#endif
+};
+
+#define MPU_INT_STATUS_DATA_READY       (0x0001)
+#define MPU_INT_STATUS_DMP              (0x0002)
+#define MPU_INT_STATUS_PLL_READY        (0x0004)
+#define MPU_INT_STATUS_I2C_MST          (0x0008)
+#define MPU_INT_STATUS_FIFO_OVERFLOW    (0x0010)
+#define MPU_INT_STATUS_ZMOT             (0x0020)
+#define MPU_INT_STATUS_MOT              (0x0040)
+#define MPU_INT_STATUS_FREE_FALL        (0x0080)
+#define MPU_INT_STATUS_DMP_0            (0x0100)
+#define MPU_INT_STATUS_DMP_1            (0x0200)
+#define MPU_INT_STATUS_DMP_2            (0x0400)
+#define MPU_INT_STATUS_DMP_3            (0x0800)
+#define MPU_INT_STATUS_DMP_4            (0x1000)
+#define MPU_INT_STATUS_DMP_5            (0x2000)
+
+/* Set up APIs */
+u_int8 mpu_init(struct int_param_s *int_param);
+u_int8 mpu_set_bypass(u_int8 bypass_on);
+
+/* Configuration APIs */
+u_int8 mpu_lp_accel_mode(u_int8 rate);
+u_int8 mpu_lp_motion_interrupt(u_int16 thresh, u_int8 time,
+																u_int8 lpa_freq);
+u_int8 mpu_set_int_level(u_int8 active_low);
+u_int8 mpu_set_int_latched(u_int8 enable);
+
+u_int8 mpu_set_dmp_state(u_int8 enable);
+u_int8 mpu_get_dmp_state(u_int8 *enabled);
+
+u_int8 mpu_get_lpf(u_int16 *lpf);
+u_int8 mpu_set_lpf(u_int16 lpf);
+
+u_int8 mpu_get_gyro_fsr(u_int16 *fsr);
+u_int8 mpu_set_gyro_fsr(u_int16 fsr);
+
+u_int8 mpu_get_accel_fsr(u_int8 *fsr);
+u_int8 mpu_set_accel_fsr(u_int8 fsr);
+
+u_int8 mpu_get_compass_fsr(u_int16 *fsr);
+
+u_int8 mpu_get_gyro_sens(float *sens);
+u_int8 mpu_get_accel_sens(u_int16 *sens);
+
+u_int8 mpu_get_sample_rate(u_int16 *rate);
+u_int8 mpu_set_sample_rate(u_int16 rate);
+u_int8 mpu_get_compass_sample_rate(u_int16 *rate);
+u_int8 mpu_set_compass_sample_rate(u_int16 rate);
+
+u_int8 mpu_get_fifo_config(u_int8 *sensors);
+u_int8 mpu_configure_fifo(u_int8 sensors);
+
+u_int8 mpu_get_power_state(u_int8 *power_on);
+u_int8 mpu_set_sensors(u_int8 sensors);
+
+u_int8 mpu_set_accel_bias(const int32_t *accel_bias);
+
+/* Data getter/setter APIs */
+u_int8 mpu_get_gyro_reg(int16_t *data);
+u_int8 mpu_get_accel_reg(int16_t *data);
+u_int8 mpu_get_compass_reg(int16_t *data);
+u_int8 mpu_get_temperature(int32_t *data);
+
+u_int8 mpu_get_int_status(int16_t *status);
+u_int8 mpu_read_fifo(int16_t *gyro, int16_t *accel, u_int8 *sensors, u_int8 *more);
+u_int8 mpu_read_fifo_stream(u_int16 length, u_int8 *data, u_int8 *more);
+u_int8 mpu_reset_fifo(void);
+
+u_int8 mpu_write_mem(u_int16 mem_addr, u_int16 length, u_int8 *data);
+u_int8 mpu_read_mem(u_int16 mem_addr, u_int16 length, u_int8 *data);
+u_int8 mpu_load_firmware(u_int16 length, const u_int8 *firmware, u_int16 start_addr, u_int16 sample_rate);
+
+u_int8 mpu_reg_dump(void);
+u_int8 mpu_read_reg(u_int8 reg, u_int8 *data);
+u_int8 mpu_run_self_test(int32_t *gyro, int32_t *accel);
+
+void *mpu6050_detect(void *data);
+void gyro_regist();
 void mpu6050_init();
-int mpu6050_detect(void *data);
 
 #endif /* __R_MPU6050_H__ */

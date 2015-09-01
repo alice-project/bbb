@@ -13,7 +13,8 @@ struct pwm_exp hm_pwm[] =
 {
     {8, 13, "/sys/devices/ocp.3/left_wheel.12", 1500000, 20000000, 0},
     {8, 19, "/sys/devices/ocp.3/right_wheel.13", 1500000, 20000000, 0},
-    {9, 22, "/sys/devices/ocp.3/servo_motor_pwm.14", 1500000, 20000000, 0},
+    {9, 21, "/sys/devices/ocp.3/servo_motor1_pwm.14", 1500000, 20000000, 0},
+    {9, 22, "/sys/devices/ocp.3/servo_motor2_pwm.15", 1500000, 20000000, 0},
 };
 
 int pwm_init()
@@ -118,9 +119,9 @@ int pwm_set_duty_cycle(int connector, int pin, unsigned int duty)
 
     hm_pwm[i].duty = duty;
 
-    sprintf(buffer, "%lu\n", duty);
+    sprintf(buffer, "%u\n", duty);
     fputs(buffer, fp);
-    
+
     fclose(fp);
 
     return 0;
@@ -172,7 +173,7 @@ int pwm_set_period(int connector, int pin, unsigned int period)
 
     hm_pwm[i].period = period;
 
-    sprintf(buffer, "%lu", period);
+    sprintf(buffer, "%u", period);
     fputs(buffer, fp);
     
     fclose(fp);

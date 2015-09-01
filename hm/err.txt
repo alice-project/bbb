@@ -1,5 +1,0 @@
-jpeg_utils.c:27:21: fatal error: jpeglib.h: No such file or directory
- #include <jpeglib.h>
-                     ^
-compilation terminated.
-make: *** [jpeg_utils.o] Error 1

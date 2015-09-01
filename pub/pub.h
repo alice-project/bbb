@@ -1,38 +1,69 @@
 #ifndef __PUB_H__
 #define __PUB_H__
 
+#include <stdlib.h>
+#include <stdio.h>
+#include <string.h>
+#include <sys/types.h>
+#include <sys/socket.h>
+#include <sys/ioctl.h>
+#include <netinet/in.h>
+#include <arpa/inet.h>
+#include <net/if.h>
+#include <pthread.h>
+#include <netdb.h>
+
+typedef unsigned char  u_int8;
+typedef unsigned short u_int16;
+typedef unsigned int   u_int32;
+
 #define MAX_HAMTERS 16
 
-#define VIDEO_MORE_PACKETS  (0x1)
+#define MUL_IPADDR  "224.1.1.1"
+#define HM_PORT1  30825
+#define HM_PORT2  30725
 
 struct s_com
 {
-    unsigned char code;
-    unsigned char id;
-    unsigned short  flags;
+    u_int8 code;
+    u_int8 id;
+    u_int16  flags;
 };
 
 struct s_hm_video
 {
-    unsigned int length;
-    unsigned char data[0];
+    u_int32 size;
+    u_int8 data[0];
 };
+#define MAX_VIDEO_FRAME_MSG  (64*1024+sizeof(struct s_com)+sizeof(struct s_hm_video))
 
 struct s_request_base
 {
-    unsigned char name[16];
+    u_int8 name[16];
+};
+
+struct s_hm_distance
+{
+    u_int32 ssonic_id;
+    u_int32 distance;
 };
 
 struct s_mc_ipaddr
 {
-    unsigned int ipaddr;
+    u_int32 ipaddr;
 };
 
 #define BA_LIGHT_ON  1
 #define BA_LIGHT_OFF 0
 struct s_base_light
 {
-    unsigned int on_off;
+    u_int32 on_off;
+};
+
+
+struct s_base_camera_cmd
+{
+    u_int32 on_off;
 };
 
 
@@ -49,24 +80,19 @@ struct s_base_light
 #define SET_DUTY_ACTION   3
 struct s_base_motion
 {
-    unsigned int left_action;
-    unsigned int left_data;
-    unsigned int right_action;
-    unsigned int right_data;
+    u_int32 left_action;
+    u_int32 left_data;
+    u_int32 right_action;
+    u_int32 right_data;
 };
 
-struct s_base_pwm_duty
+struct s_base_servo_cmd
 {
-    unsigned int cmd;
+    u_int32 id;
+    u_int32 cmd;  // 正转/反转
+    u_int32 angle;  //角度
 };
 
-struct s_base_pwm_freq
-{
-    unsigned int cmd;
-};
-
-#define MUL_IPADDR  "224.1.1.1"
-#define BASE_PORT   7878
 
 /* fixed message length between BASE and HM */
 #define BUFLEN 256
@@ -76,25 +102,39 @@ struct s_base_pwm_freq
 #define AUTO_MODE   1
 struct s_hm_mode
 {
-    unsigned int mode;
+    u_int32 mode;
 };
 /*  */
 
 enum {
-    /* 0 ~ 127: hm to base */
+    /* 0 ~ 31: hm to base */
     HM_REQUEST_BASE = 0,
     HM_REPORTING,
     HM_CAMERA,
+    HM_DISTANCE,
 
-    /* 128 ~ 255: base to hm */
-    BA_MC_IPADDR = 128,
+    /* 32 ~ 63: base to hm */
+    BA_MC_IPADDR = 32,
     BA_GC_SETTINGS,      /* General Control Settings */
     BA_LIGHT_CMD,
     BA_MOTION_CMD,
+    BA_SERVO_CMD,
     BA_TEST_CMD,
     BA_PWM_DUTY_CMD,
     BA_PWM_FREQ_CMD,
+    BA_CAMERA_CMD,
+    BA_REPLY_HM_ADDR,
+
+    MC_REQUEST_HM_ADDR,
+    BA_RAWTEXT_CMD,
 };
+
+struct s_base_info
+{
+    int fd;
+    struct sockaddr_in m_addr;
+};
+
 
 
 #endif

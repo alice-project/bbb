@@ -4,18 +4,18 @@
 #ifdef GPIO_USING_DTS
 
 const int gpio_bitfield[92] = {
-    0,       0,        6,     7,     2,     3,    2,     3,
+    0,    0,     6,     7,     2,     3,    2,     3,
     5,    4,     13,    12,    23,    26,   15,    14,
     27,   1,     22,    31,    30,    5,    4,     1,
     0,    29,    22,    24,    23,    25,   10,    11,    
     9,    17,    8,     16,    14,    15,   12,    13,    
     10,   11,    8,     9,     6,     7,
-    0,       0,        0,        0,        0,        0,       0,        0,
-    0,       0,        30,    28,    31,    18,   16,    19,
+    0,    0,     0,     0,     0,     0,    0,     0,
+    0,    0,     30,    28,    31,    18,   16,    19,
     5,    4,     13,    12,    3,     2,    17,    15,
     21,   14,    19,    17,    15,    16,   14,    0,
-    0,       0,        0,        0,        0,        0,       0,        0,
-    20,   7,     0,        0,        0,        0,
+    0,    0,     0,     0,     0,     0,    0,     0,
+    20,   7,     0,     0,     0,     0,
 };
 
 const int gpio_bank[92] = {
@@ -289,12 +289,9 @@ int gpio_set_dir(int connector, int pin, int dir)
         
     port = (connector == 8)?pin-1:pin-1+46;
 
-printf("x:%d:", port);
-
     if(gpio_bank[port] == -1)
         return -1;
 
-printf("%d\n", gpio_bank[port]*32+gpio_bitfield[port]);
     fp = fopen(gpio_dts_dir[gpio_bank[port]*32+gpio_bitfield[port]], "w");
     if(fp == NULL)
     {
@@ -445,7 +442,6 @@ int gpio_init()
         if(gpio_used[i][0] == 0)
             break;
 
-printf("i=%d\n", i);
         gpio_set_dir(gpio_used[i][1], gpio_used[i][2], gpio_used[i][3]);
     }
 

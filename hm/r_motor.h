@@ -8,7 +8,8 @@ void motor_regist();
 void motor_init();
 
 int parser_motion_cmd(struct s_base_motion *cmd);
-int my_motor_speed(void *data);
+void *detect_left_speed(void *data);
+void *detect_right_speed(void *data);
 
 #endif
 

@@ -23,10 +23,26 @@
 #include "r_commu.h"
 
 char         *s_my_ipaddr;
-unsigned int d_my_ipaddr;
-unsigned int d_base_ipaddr;
+u_int32 d_my_ipaddr;
+u_int32 d_base_ipaddr;
 
 struct s_base_info m_base;
+
+MSG_HANDLER cmd_cb[64];
+
+int regist_cmd_cb(u_int8 id, MSG_HANDLER cb)
+{
+    if(id > 63)
+        return -1;
+
+    if(cmd_cb[id]!=NULL)
+        return -2;
+
+    if(cb==NULL)
+        return -3;
+
+    cmd_cb[id] = cb;
+}
 
 static void get_my_addr()
 {
@@ -56,7 +72,7 @@ static int wait_for_base()
     int sockfd;
     char rcv_buf[BUFLEN];
     char snd_buf[BUFLEN];
-    unsigned int socklen, n;
+    u_int32 socklen, n;
     struct s_com *rcv_msg, *snd_msg;
     struct s_request_base *snd_payload;
     struct s_mc_ipaddr    *rcv_payload;
@@ -72,7 +88,7 @@ static int wait_for_base()
 
     memset(&remote_addr, 0, socklen);
     remote_addr.sin_family = AF_INET;
-    remote_addr.sin_port = htons(BASE_PORT);
+    remote_addr.sin_port = htons(HM_PORT2);
 
     while (inet_pton(AF_INET, MUL_IPADDR, &remote_addr.sin_addr) <= 0) 
     {
@@ -112,13 +128,13 @@ static int wait_for_base()
     {
         bzero(rcv_buf, BUFLEN);
         n = recvfrom(sockfd, rcv_buf, BUFLEN, MSG_DONTWAIT, (struct sockaddr *) &remote_addr, &socklen);
-        if (n < sizeof(struct s_com)) {
+        while (n < sizeof(struct s_com)) {
             /* keep requesting unless received response from BASE */
             sendto(sockfd, snd_buf, sizeof(snd_buf), 0, (struct sockaddr *) &remote_addr, sizeof(struct sockaddr_in));
-            sleep(10);
+            sleep(1);
+	        n = recvfrom(sockfd, rcv_buf, BUFLEN, MSG_DONTWAIT, (struct sockaddr *) &remote_addr, &socklen);
             continue;
         }
-
         rcv_msg = (struct s_com *)rcv_buf;
         switch(rcv_msg->code)
         {
@@ -155,8 +171,33 @@ int regular_info(void *data)
     msg->flags = 0;
     
     n = sendto(m_base.fd, snd_buf, BUFLEN, 0, (struct sockaddr *) &m_base.m_addr, sizeof(struct sockaddr_in));
-
     free(snd_buf);
+
+    return 0;
+}
+
+int report_distance_info(struct s_hm_distance *data)
+{
+    char *snd_buf;
+    struct s_com *msg;
+    int n;
+    
+    snd_buf = (char *)malloc(sizeof(char)*BUFLEN);
+    if(snd_buf == NULL)
+    {
+        return -1;
+    }
+    memset(snd_buf, 0, sizeof(char)*BUFLEN);
+    msg = (struct s_com *)snd_buf;
+    msg->code = HM_DISTANCE;
+    msg->id = 0; /* temporary set */
+    msg->flags = 0;
+
+    memcpy(snd_buf+sizeof(struct s_com), data, sizeof(struct s_hm_distance));
+    
+    n = sendto(m_base.fd, snd_buf, BUFLEN, 0, (struct sockaddr *) &m_base.m_addr, sizeof(struct sockaddr_in));
+    free(snd_buf);
+
     return 0;
 }
 
@@ -187,15 +228,13 @@ void *commu_proc(void *data)
     memset(&m_base.m_addr, 0, sizeof(m_base.m_addr));
     m_base.m_addr.sin_family = AF_INET;
     m_base.m_addr.sin_addr.s_addr = htonl(d_base_ipaddr);
-    m_base.m_addr.sin_port = htons(BASE_PORT);
+    m_base.m_addr.sin_port = htons(HM_PORT1);
     
     while(connect(m_base.fd, (struct sockaddr *)&m_base.m_addr, sizeof(struct sockaddr_in)) < 0)
     {
         perror("connect timeout!\n");
         sleep(10);
     }
-    printf("start timer\n");
-    set_timer(0, R_TIMER_LOOP, 10000, regular_info, NULL);
 
     for(;;)
     {    
@@ -205,18 +244,22 @@ void *commu_proc(void *data)
             continue;
         }
         msg = (struct s_com *)rcv_buf;
-        switch(msg->code)
+
+        if(msg->code > 63)
         {
-            case BA_MOTION_CMD:
+            printf("UNKNOWN command(%d) is received!\n", msg->code);
+            continue;
+        }
+        if(cmd_cb[msg->code] == NULL)
+        {
+            printf("UNDEFINED command(%d) is received!\n", msg->code);
+            continue;
+        }
+        
+        cmd_cb[msg->code](rcv_buf + sizeof(struct s_com));
+/*            case BA_LIGHT_CMD:
             {
-                struct s_base_motion *motion_cmd = (struct s_base_motion *)(rcv_buf + sizeof(struct s_com));
-                printf("received  BA_MOTION_CMD command from base\n");
-                parser_motion_cmd(motion_cmd);
-                break;
-            }
-            case BA_LIGHT_CMD:
-            {
-                printf("received  BA_LIGHT_CMD command from base\n");
+                //printf("received  BA_LIGHT_CMD command from base\n");
                 struct s_base_light *light_cmd = (struct s_base_light *)(rcv_buf + sizeof(struct s_com));
                 if(light_cmd->on_off == BA_LIGHT_ON) {
                     set_led_on();
@@ -226,9 +269,21 @@ void *commu_proc(void *data)
                 }
                 break;
             }
+
+            case BA_CAMERA_CMD:
+            {
+                struct s_base_camera_cmd *camera_cmd = (struct s_base_camera_cmd *)(rcv_buf + sizeof(struct s_com));
+                if(camera_cmd->on_off == 1) {
+                    set_camera_rotate(1);
+                }
+                else {
+                    set_camera_rotate(1);
+                }
+                break;
+            }
             case BA_GC_SETTINGS:
             {
-                printf("received  BA_GC_SETTINGS command from base\n");
+                //printf("received  BA_GC_SETTINGS command from base\n");
                 struct s_base_light *light_cmd = (struct s_base_light *)(rcv_buf + sizeof(struct s_com));
                 if(light_cmd->on_off == BA_LIGHT_ON) {
                     set_led_on();
@@ -243,30 +298,18 @@ void *commu_proc(void *data)
                 parser_test_cmd();
                 break;
             }
-            case BA_PWM_DUTY_CMD:
+            case BA_SERVO_CMD:
             {
-                struct s_base_pwm_duty *duty_cmd = (struct s_base_pwm_duty *)(rcv_buf + sizeof(struct s_com));
-                if(duty_cmd->cmd == 0)
-                    pwm_incr_duty(8,13,10);
+                struct s_base_servo_cmd *servo_cmd = (struct s_base_servo_cmd *)(rcv_buf + sizeof(struct s_com));
+
+                if(servo_cmd->cmd == 1)  // 正转
+                    servo_rotate_to(servo_cmd->id, servo_cmd->angle);
                 else
-                    pwm_incr_duty(8,13,-10);
+                    servo_rotate_to(servo_cmd->id, -1*servo_cmd->angle);
+
                 break;
             }
-            case BA_PWM_FREQ_CMD:
-            {
-                struct s_base_pwm_freq *freq_cmd = (struct s_base_pwm_freq *)(rcv_buf + sizeof(struct s_com));
-                if(freq_cmd->cmd == 0)
-                    pwm_incr_freq(8,13,1000);
-                else
-                    pwm_incr_freq(8,13,-1000);
-                break;
-            }
-            default:
-            {
-                printf("UNKNOWN command(%d) is received!\n", msg->code);
-                break;
-            }
-        }
+*/
     }
     
     close(m_base.fd);

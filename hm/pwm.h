@@ -10,6 +10,11 @@ struct pwm_exp {
     int polarity;
 };
 
+struct pwm_param {
+    int occpy_cycle;
+    int idle_cycle;
+};
+
 int pwm_incr_freq(int connector, int pin, unsigned int var);
 int pwm_incr_duty(int connector, int pin, unsigned int var);
 int pwm_stop(int connector, int pin);
@@ -18,6 +23,8 @@ int pwm_set_duty(int connector, int pin, unsigned int duty);
 int pwm_set_duty_cycle(int connector, int pin, unsigned int duty);
 int pwm_set_period(int connector, int pin, unsigned int period);
 int pwm_set_polarity(int connector, int pin, int polarity);
+
+int pwm_pru_set_duty(int id, unsigned int duty);
 
 
 #endif

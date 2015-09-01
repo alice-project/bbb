@@ -233,7 +233,7 @@ int i2c_smbus_process_call(int file, unsigned char command, unsigned short value
 
 /* Returns the number of read bytes */
 int i2c_smbus_read_block_data(int file, unsigned char command, 
-                                              unsigned char *values)
+                              unsigned char *values)
 {
 	union i2c_smbus_data data;
 	int i;
@@ -242,7 +242,9 @@ int i2c_smbus_read_block_data(int file, unsigned char command,
 		return -1;
 	else {
 		for (i = 1; i <= data.block[0]; i++)
+        {
 			values[i-1] = data.block[i];
+        }
 		return data.block[0];
 	}
 }
@@ -265,7 +267,7 @@ int i2c_smbus_write_block_data(int file, unsigned char command, unsigned char le
    ask for less than 32 bytes, your code will only work with kernels
    2.6.23 and later. */
 int i2c_smbus_read_i2c_block_data(int file, unsigned char command,
-                                                  unsigned char length, unsigned char *values)
+                                  unsigned char length, unsigned char *values)
 {
 	union i2c_smbus_data data;
 	int i;
@@ -273,13 +275,16 @@ int i2c_smbus_read_i2c_block_data(int file, unsigned char command,
 	if (length > 32)
 		length = 32;
 	data.block[0] = length;
+
 	if (i2c_smbus_access(file,I2C_SMBUS_READ,command,
 	                     length == 32 ? I2C_SMBUS_I2C_BLOCK_BROKEN :
 	                      I2C_SMBUS_I2C_BLOCK_DATA,&data))
 		return -1;
 	else {
 		for (i = 1; i <= data.block[0]; i++)
+        {
 			values[i-1] = data.block[i];
+        }
 		return data.block[0];
 	}
 }
