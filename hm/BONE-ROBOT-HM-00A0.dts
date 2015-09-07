@@ -46,7 +46,7 @@
 		"P9.14",    /* gpio1.18 */
 
 	/* ------ DC MOTOR Decoder ------ */
-        "P8.12",    /* pr1_pru0_pru_r30_14,  right side */
+        "P8.16",    /* pr1_pru0_pru_r31_14,  right side */
         "P8.27",    /* pr1_pru1_pru_r31_8,  leftside */
 		"pru0",
 		"pru1",
@@ -199,7 +199,7 @@
 		target = <&am33xx_pinmux>;
 		__overlay__ {
 
-			robot_dcmotor_pins: robot_dcmotor_pins {
+			motor_decoder_pins: motor_decoder_pins {
 				status = "okay";
 				pinctrl-single,pins = <
 					0x70 0x27   /* P9_11, gpio0.30  */
@@ -215,41 +215,28 @@
 	fragment@40 {
 		target = <&am33xx_pinmux>;
 		__overlay__ {
-			motor_decoder_pins: motor_decoder_pins {
+			motor_decoder_pinmux: motor_decoder_pinmux {
 				status = "okay";
 				pinctrl-single,pins = <
-					0x12 0x27   /* pr1_pru0_pru_r30_14, rightside, P8_12, mode7 in */
-					0x0 0x27   /* pr1_pru1_pru_r31_8, leftside, P8_25, mode7 in */
+					0x38 0x2e   /* pr1_pru0_pru_r31_14, rightside, P8_16, mode6 in */
+					0xe0 0x2e   /* pr1_pru1_pru_r31_8, leftside, P8_27, mode6 in */
 				>;
 			};
 		};
 	};
 
-/*	fragment@41 {
+	fragment@41 {
 		target = <&ocp>;
 		__overlay__ {
-			motor_des {
-				compatible = "bone-pinmux-helper";
-				status = "okay";
-				pinctrl-names = "default";
-				pinctrl-0 = <&motor_decoder_pins>;
-
-				decoder1 {
-					gpio-name = "motor_decoders:decoder1";
-					gpio = <&gpio1 12 0>;
-					input;
-					init-low;
-				};
-				decoder2 {
-					gpio-name = "motor_decoders:decoder2";
-					gpio = <&gpio1 0 0>;
-					input;
-					init-low;
-				};
-			};
+		  motor_decoder_helper: helper {
+			compatible = "bone-pinmux-helper";
+			pinctrl-names = "default";
+			pinctrl-0 = <&motor_decoder_pinmux>;
+			status = "okay";
+		  };
 		};
 	};
-*/
+
 	fragment@42 {
 		target = <&pruss>;
 		__overlay__ {

@@ -1,0 +1,93 @@
+get_motor_right_speed...                                                        
+get_motor_left_speed...                                                         
+communication thread started!                                                   
+received response from BASE!                                                    
+BASE ip is 0xc0a80167                                                           
+right flag=0,SPEED=0                                                            
+left flag=0,SPEED=0                                                             
+right flag=0,SPEED=0                                                            
+left flag=0,SPEED=0                                                             
+right flag=0,SPEED=0                                                            
+left flag=0,SPEED=0                                                             
+right flag=0,SPEED=0                                                            
+left flag=0,SPEED=0                                                             
+right flag=0,SPEED=0                                                            
+left flag=0,SPEED=0                                                             
+right flag=0,SPEED=0                                                            
+left flag=0,SPEED=0                                                             
+right flag=1396834412,SPEED=10                                                  
+left flag=0,SPEED=0                                                             
+right flag=1600986470,SPEED=10                                                  
+left flag=0,SPEED=0                                                             
+right flag=1796946770,SPEED=10                                                  
+left flag=0,SPEED=0                                                             
+right flag=2001570821,SPEED=10                                                  
+left flag=0,SPEED=0                                                             
+right flag=-2097660587,SPEED=10                                                 
+left flag=0,SPEED=0                                                             
+right flag=-1901665027,SPEED=10                                                 
+left flag=0,SPEED=0                                                             
+right flag=-1696438304,SPEED=10                                                 
+left flag=0,SPEED=0                                                             
+right flag=-1498976314,SPEED=10                                                 
+left flag=0,SPEED=0                                                             
+right flag=-1393119363,SPEED=10                                                 
+left flag=0,SPEED=0                                                             
+right flag=0,SPEED=0                                                            
+left flag=0,SPEED=0                                                             
+right flag=0,SPEED=0                                                            
+left flag=0,SPEED=0                                                             
+right flag=0,SPEED=0                                                            
+left flag=0,SPEED=0                                                             
+right flag=-500106461,SPEED=10                                                  
+left flag=0,SPEED=0                                                             
+right flag=-299256392,SPEED=10                                                  
+left flag=0,SPEED=0                                                             
+right flag=-99069141,SPEED=10                                                   
+left flag=0,SPEED=0                                                             
+right flag=-1,SPEED=10                                                          
+left flag=0,SPEED=0                                                             
+right flag=-1,SPEED=10                                                          
+left flag=0,SPEED=0                                                             
+right flag=-1,SPEED=10                                                          
+left flag=0,SPEED=0                                                             
+right flag=-1,SPEED=10                                                          
+left flag=0,SPEED=0                                                             
+right flag=-1,SPEED=10                                                          
+left flag=0,SPEED=0                                                             
+right flag=-1,SPEED=10                                                          
+left flag=0,SPEED=0                                                             
+right flag=-1,SPEED=10                                                          
+left flag=0,SPEED=0                                                             
+right flag=0,SPEED=0                                                            
+left flag=0,SPEED=0                                                             
+right flag=0,SPEED=0                                                            
+left flag=0,SPEED=0                                                             
+right flag=0,SPEED=0                                                            
+left flag=0,SPEED=0                                                             
+right flag=0,SPEED=0                                                            
+left flag=0,SPEED=0                                                             
+right flag=-1,SPEED=10                                                          
+left flag=0,SPEED=0                                                             
+right flag=-1,SPEED=10                                                          
+left flag=0,SPEED=0                                                             
+right flag=-1,SPEED=10                                                          
+left flag=0,SPEED=0                                                             
+right flag=-1,SPEED=10                                                          
+left flag=0,SPEED=0                                                             
+right flag=-1,SPEED=10                                                          
+left flag=0,SPEED=0                                                             
+right flag=-1,SPEED=10                                                          
+left flag=0,SPEED=0                                                             
+right flag=0,SPEED=0                                                            
+left flag=0,SPEED=0                                                             
+right flag=0,SPEED=0                                                            
+left flag=0,SPEED=0                                                             
+right flag=0,SPEED=0                                                            
+left flag=0,SPEED=0                                                             
+right flag=0,SPEED=0                                                            
+left flag=0,SPEED=0                                                             
+^C                                                                              
+root@arm:/home/ubuntu/robot#                                                    
+root@arm:/home/ubuntu/robot# 
+

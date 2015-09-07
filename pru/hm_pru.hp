@@ -57,32 +57,36 @@ DELAY:
 .macro RIGHT_MOTOR_SPEED_PROC
     MOV r0, CONTROL_0
     MOV r1, 334       // 
-    MOV r2, 0         // r2 stores the cycle counter
-    MOV r3, 0xffffffff    // r3 stores infinite value
-    MOV r4, 0         // r4 stores the pulse count of the decoder
-    MOV r5, 0         // flags, =1 starts to decoder
 
 LOOP:
+    MOV r2, 0         // r2 stores the cycle counter
+    MOV r3, 0xffffffff    // r3 stores infinite value
+    MOV r5, 0         // flags, =1 starts to decoder
+	
+CONFIG:
+    MOV r4, 0         // r4 stores the count of the "wheel"
+
+	LBBO r6, r0, 0, 4  // get configuration
+	SET r6.t1    // ENABLE
+	SET r6.t3	 // PRU Cycle Counter Enabled
+	SBBO r6, r0, 0, 4  // save configuration
+
 //    LBCO r5, CONST_PRUDRAM, 0, 4
 //    QBBC LOOP, r5, 0
-    
-    SBCO r3, CONST_PRUDRAM, 4, 4  // initialize the result to be "infinite"
-    SBBO r2, r0, 0xC, 4  // clear the cycle counter first
-
+	
 WAIT_FOR_PULSE:
-    WBS r30, 14
-    WBC r30, 14
-    ADD r4, r4, 1      
+    WBS r31.t14
+    WBC r31.t14
+    ADD r4, r4, 1
     QBGT WAIT_FOR_PULSE, r4, r1
 
-    LBBO r2, r0, 0xC, 4  // read the cycle counter
-
 STORE_RESULT:
+    LBBO r2, r0, 0xC, 4  // read the cycle counter
     //Store result in into memory using constant table
-    SBCO r2, CONST_PRUDRAM, 4, 4
+    SBCO r2, CONST_PRUDRAM, 0, 4
 
-    CLR r5, 0
-    SBCO r5, CONST_PRUDRAM, 0, 4
+    mov r5, 10
+    SBCO r5, CONST_PRUDRAM, 4, 4
     JMP LOOP
 
 ENDM:
@@ -94,32 +98,36 @@ ENDM:
 .macro LEFT_MOTOR_SPEED_PROC
     MOV r0, CONTROL_1
     MOV r1, 334       // 
-    MOV r2, 0         // r2 stores the cycle counter
-    MOV r3, 0xffffffff    // r3 stores infinite value
-    MOV r4, 0         // r4 stores the pulse count of the decoder
-    MOV r5, 0         // flags, =1 starts to decoder
 
 LOOP:
-//    LBCO r5, CONST_PRUDRAM, 0, 4
-//   QBBC LOOP, r5, 0
-    
-    SBCO r3, CONST_PRUDRAM, 4, 4  // initialize the result to be "infinite"
-    SBBO r2, r0, 0xC, 4  // clear the cycle counter first
+    MOV r2, 0         // r2 stores the cycle counter
+    MOV r3, 0xffffffff    // r3 stores infinite value
+    MOV r5, 0         // flags, =1 starts to decoder
+	
+CONFIG:
+    MOV r4, 0         // r4 stores the count of the "wheel"
 
+	LBBO r6, r0, 0, 4  // get configuration
+	SET r6.t1    // ENABLE
+	SET r6.t3	 // PRU Cycle Counter Enabled
+	SBBO r6, r0, 0, 4  // save configuration
+
+//    LBCO r5, CONST_PRUDRAM, 0, 4
+//    QBBC LOOP, r5, 0
+	
 WAIT_FOR_PULSE:
-    WBS r31, 8
-    WBC r31, 8
-    ADD r4, r4, 1      
+    WBS r31.t8
+    WBC r31.t8
+    ADD r4, r4, 1
     QBGT WAIT_FOR_PULSE, r4, r1
 
-    LBBO r2, r0, 0xC, 4  // read the cycle counter
-
 STORE_RESULT:
+    LBBO r2, r0, 0xC, 4  // read the cycle counter
     //Store result in into memory using constant table
-    SBCO r2, CONST_PRUDRAM, 4, 4
+    SBCO r2, CONST_PRUDRAM, 0, 4
 
-    CLR r5, 0
-    SBCO r5, CONST_PRUDRAM, 0, 4
+    mov r5, 11
+    SBCO r5, CONST_PRUDRAM, 4, 4
     JMP LOOP
 
 ENDM:

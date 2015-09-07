@@ -24,8 +24,8 @@ const int motor_pin[][6] = {
 };
 
 const int motor_decoder_pin[2][2] = {
-    {8, 12},
-    {8, 25},
+    {8, 16},
+    {8, 27},
 };
 
 void motor_regist()
@@ -131,7 +131,13 @@ static int motor_pru_init()
     /* Execute example on PRU */
     prussdrv_exec_program (0, "./hm_pru0.bin");
     prussdrv_exec_program (1, "./hm_pru1.bin");
-    
+
+*left_flag=0;
+*left_speed=1;
+
+*right_flag=2;
+*right_speed=3;
+
     return(0);
 }
 
@@ -156,7 +162,7 @@ void motor_init()
 int parser_motion_cmd(struct s_base_motion *cmd)
 {
     if(cmd == NULL)  return -1;
-printf("left=%d,right=%d\n", cmd->left_action, cmd->right_action);
+
     if(cmd->left_action == START_ACTION)
     {
         start_chassis();
@@ -214,8 +220,10 @@ void *detect_left_speed(void *data)
     printf("get_motor_left_speed...\n");
     for(;;)
     {
-        printf("left flag=%d,SPEED=%d\n", *left_flag, *left_speed);
+		*left_flag=0;
+		*left_speed=0;
         sleep(1);
+        printf("left flag=0x%x(%d/s),SPEED=0x%x\n", *left_flag, *left_flag/200000000, *left_speed);
     }
     printf("\n");
 
@@ -228,8 +236,10 @@ void *detect_right_speed(void *data)
     printf("get_motor_right_speed...\n");
     for(;;)
     {
-        printf("right flag=%d,SPEED=%d\n", *right_flag, *right_speed);
+		*right_flag=0;
+		*right_speed=0;
         sleep(1);
+        printf("right flag=0x%x(%d/s),SPEED=0x%x\n", *right_flag, *right_flag/200000000, *right_speed);
     }
     printf("\n");
 

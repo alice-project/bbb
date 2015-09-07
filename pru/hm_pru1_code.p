@@ -19,7 +19,7 @@ SPEED_DETECT:
     // field to 0x0010.  This will make C31 point to 0x80001000 (DDR memory).
     MOV       r0, 0x00100000
     MOV       r1, CTPPR_1
-    MOV      r0, r1
+    MOV       r0, r1
 
     LEFT_MOTOR_SPEED_PROC
 
