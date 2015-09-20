@@ -59,6 +59,8 @@ GtkDrawingArea *servo2_clock;
 
 GtkEntry *entry_rawtext_cmd;
 
+struct s_base_motion r_motion;
+
 /*
  light: 0=GRAY(not active), 1=GREEN, 2=YELLOW, 3=RED
  */
@@ -164,113 +166,94 @@ void on_radio_auto_toggled(GtkWidget *radio, gpointer data)
 
 void on_rb_left_forward_toggled(GtkWidget *radio, gpointer data)
 {
-    struct s_base_motion motion;
 
     if(!gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(radio)))
         return;
 
-    motion.left_action = START_ACTION;
-    motion.left_data = POSITIVE_DIR;
-    motion.right_action = NULL_ACTION;
+    r_motion.left_action = START_ACTION;
+    r_motion.left_data = POSITIVE_DIR;
 
-    send_motion_command(&motion);
+    send_motion_command(&r_motion);
 }
 
 void on_rb_left_stop_toggled(GtkWidget *radio, gpointer data)
 {
-    struct s_base_motion motion;
-
     if(!gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(radio)))
         return;
 
-    motion.left_action = STOP_ACTION;
-    motion.right_action = NULL_ACTION;
+    r_motion.left_action = STOP_ACTION;
 
-    send_motion_command(&motion);
+    send_motion_command(&r_motion);
 }
 
 void on_rb_left_reverse_toggled(GtkWidget *radio, gpointer data)
 {
-    struct s_base_motion motion;
-
     if(!gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(radio)))
         return;
 
-    motion.left_action = START_ACTION;
-    motion.left_data = NEGATIVE_DIR;
-    motion.right_action = NULL_ACTION;
+    r_motion.left_action = START_ACTION;
+    r_motion.left_data = NEGATIVE_DIR;
 
-    send_motion_command(&motion);
+    send_motion_command(&r_motion);
 }
 
 void on_rb_right_forward_toggled(GtkWidget *radio, gpointer data)
 {
-    struct s_base_motion motion;
-
     if(!gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(radio)))
         return;
 
-    motion.right_action = START_ACTION;
-    motion.right_data = POSITIVE_DIR;
-    motion.left_action = NULL_ACTION;
+    r_motion.right_action = START_ACTION;
+    r_motion.right_data = POSITIVE_DIR;
 
-    send_motion_command(&motion);
+    send_motion_command(&r_motion);
 }
 
 void on_rb_right_stop_toggled(GtkWidget *radio, gpointer data)
 {
-    struct s_base_motion motion;
-
     if(!gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(radio)))
         return;
 
-    motion.right_action = STOP_ACTION;
-    motion.left_action = NULL_ACTION;
+    r_motion.right_action = STOP_ACTION;
 
-    send_motion_command(&motion);
+    send_motion_command(&r_motion);
 }
 
 void on_rb_right_reverse_toggled(GtkWidget *radio, gpointer data)
 {
-    struct s_base_motion motion;
-
     if(!gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(radio)))
         return;
 
-    motion.right_action = START_ACTION;
-    motion.right_data = NEGATIVE_DIR;
-    motion.left_action = NULL_ACTION;
+    r_motion.right_action = START_ACTION;
+    r_motion.right_data = NEGATIVE_DIR;
 
-    send_motion_command(&motion);
+    send_motion_command(&r_motion);
 }
 
 void on_button_motion_cmd_clicked(GtkWidget *button, gpointer data)
 {
-    struct s_base_motion motion;
-
     if(gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(rb_left_forward))) {
-        motion.left_action = START_ACTION;
-        motion.left_data = POSITIVE_DIR;
+        r_motion.left_action = START_ACTION;
+        r_motion.left_data = POSITIVE_DIR;
     } else if(gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(rb_left_stop))) {
-        motion.left_action = STOP_ACTION;
-        motion.left_data = POSITIVE_DIR;
+        r_motion.left_action = STOP_ACTION;
+        r_motion.left_data = POSITIVE_DIR;
     } else if(gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(rb_left_backward))) {
-        motion.left_action = START_ACTION;
-        motion.left_data = NEGATIVE_DIR;
+        r_motion.left_action = START_ACTION;
+        r_motion.left_data = NEGATIVE_DIR;
     }
 
     if(gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(rb_right_forward))) {
-        motion.right_action = START_ACTION;
-        motion.right_data = POSITIVE_DIR;
+        r_motion.right_action = START_ACTION;
+        r_motion.right_data = POSITIVE_DIR;
     } else if(gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(rb_right_stop))){
-        motion.right_action = STOP_ACTION;
-        motion.right_data = POSITIVE_DIR;
+        r_motion.right_action = STOP_ACTION;
+        r_motion.right_data = POSITIVE_DIR;
     } else if(gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(rb_right_backward))){
-        motion.right_action = START_ACTION;
-        motion.right_data = NEGATIVE_DIR;
+        r_motion.right_action = START_ACTION;
+        r_motion.right_data = NEGATIVE_DIR;
     }
 
-    send_motion_command(&motion);
+    send_motion_command(&r_motion);
 }
 
 void right_speed_value_changed_cb(GtkWidget *button, gpointer data)
@@ -648,6 +631,11 @@ int main (int argc, char *argv[])
 
     left_speed = GTK_SCALE (gtk_builder_get_object (builder, "left_speed"));
     right_speed = GTK_SCALE (gtk_builder_get_object (builder, "right_speed"));
+
+	r_motion.left_action = START_ACTION;
+    r_motion.left_data = POSITIVE_DIR;
+    r_motion.right_action = START_ACTION;
+    r_motion.right_data = POSITIVE_DIR;
 
     servo1_angle = GTK_SCALE (gtk_builder_get_object (builder, "servo1_angle"));
     servo2_angle = GTK_SCALE (gtk_builder_get_object (builder, "servo1_angle"));

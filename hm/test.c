@@ -2,7 +2,13 @@
 #include <stdio.h>
 #include <iwlib.h>
 
+#define WHEEL_RADIUS  (32)
+
 int main(void) {
+unsigned int speed=0xdad9a5;
+printf("speed=%f\n", (double)speed*(double)WHEEL_RADIUS*2*3.14/200000000.0);
+
+#if 0
   wireless_scan_head head;
   wireless_scan *result;
   iwrange range;
@@ -29,7 +35,7 @@ int main(void) {
     printf("%s, Signal=%d:%d\n", result->b.essid, result->stats.qual.level, result->stats.qual.noise);
     result = result->next;
   }
-
-  exit(0);
+#endif
+  return 0;
 }
 

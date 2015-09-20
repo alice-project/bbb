@@ -218,8 +218,8 @@
 			motor_decoder_pinmux: motor_decoder_pinmux {
 				status = "okay";
 				pinctrl-single,pins = <
-					0x38 0x2e   /* pr1_pru0_pru_r31_14, rightside, P8_16, mode6 in */
-					0xe0 0x2e   /* pr1_pru1_pru_r31_8, leftside, P8_27, mode6 in */
+					0x38 0x2e   /* pr1_pru0_pru_r31_14, leftside, P8_16, mode6 in */
+					0xe0 0x2e   /* pr1_pru1_pru_r31_8, rightside, P8_27, mode6 in */
 				>;
 			};
 		};

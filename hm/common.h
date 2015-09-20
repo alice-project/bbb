@@ -20,7 +20,7 @@ typedef signed char    int8;
 typedef signed short   int16;
 typedef signed int     int32;
 
-typedef int (*MSG_HANDLER)(u_int8 *msg);
+typedef int (*MSG_HANDLER)(void *msg);
 typedef int (*msg_func)(void *p);
 
 typedef int (*timer_func)(void *p);

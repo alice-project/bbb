@@ -23,6 +23,7 @@ int pwm_set_duty(int connector, int pin, unsigned int duty);
 int pwm_set_duty_cycle(int connector, int pin, unsigned int duty);
 int pwm_set_period(int connector, int pin, unsigned int period);
 int pwm_set_polarity(int connector, int pin, int polarity);
+int pwm_get_duty(int connector, int pin);
 
 int pwm_pru_set_duty(int id, unsigned int duty);
 

@@ -140,7 +140,7 @@ int main(int argc, char *argv[])
     #endif
 
 	#ifdef ENABLE_MOTOR
-    pthread_t speed_detect_thd1,speed_detect_thd2;
+    pthread_t speed_detect_thd;
 	#endif
 
     #ifdef ENABLE_MPU6050
@@ -177,8 +177,7 @@ int main(int argc, char *argv[])
     #endif
 
 	#ifdef ENABLE_MOTOR
-    pthread_create(&speed_detect_thd1, NULL, &detect_left_speed, NULL);
-    pthread_create(&speed_detect_thd2, NULL, &detect_right_speed, NULL);
+    pthread_create(&speed_detect_thd, NULL, &detect_speed, NULL);
 	#endif
 
     #ifdef ENABLE_MPU6050
@@ -218,8 +217,7 @@ int main(int argc, char *argv[])
     }
 
 	#ifdef ENABLE_MOTOR
-    pthread_join(speed_detect_thd1, NULL);
-    pthread_join(speed_detect_thd2, NULL);
+    pthread_join(speed_detect_thd, NULL);
 	#endif
 
     pthread_join(tm_thread, NULL);

@@ -3,6 +3,8 @@
 #include <unistd.h>
 #include <sys/time.h>
 
+#include "common.h"
+
 #include "prussdrv.h"
 #include "pruss_intc_mapping.h"
 
@@ -10,11 +12,14 @@
 #include "gpio.h"
 #include "r_motor.h"
 
-static unsigned int *left_speed = NULL;
-static unsigned int *left_flag = NULL;
+static u_int32 *left_speed_mem = NULL;
+static u_int32 *right_speed_mem = NULL;
 
-static unsigned int *right_speed = NULL;
-static unsigned int *right_flag = NULL;
+u_int32 left_speed_pulse=0;
+u_int32 right_speed_pulse=0;
+u_int32 left_speed_mm=0;
+u_int32 right_speed_mm=0;
+int32 speed_int;
 
 const int motor_pin[][6] = {
     /* connector, PIN */
@@ -80,11 +85,20 @@ int start_chassis()
     start_motor(1);
 }
 
+u_int32 get_wheel_pwm(int dir)
+{
+	if(dir == LEFT_SIDE)
+		return pwm_get_duty(motor_decoder_pin[0][0], motor_decoder_pin[0][1]);
+	else
+		return pwm_get_duty(motor_decoder_pin[1][0], motor_decoder_pin[1][1]);
+}
 
-static void *pru_mem = NULL;
+
+static void *pru_mem0 = NULL;
+static void *pru_mem1 = NULL;
 static int motor_pru_init()
 {
-    unsigned int ret;
+    u_int32 ret;
     tpruss_intc_initdata pruss_intc_initdata = PRUSS_INTC_INITDATA;
 
     /* Initialize the PRU */
@@ -109,34 +123,26 @@ static int motor_pru_init()
     /* Get the interrupt initialized */
     prussdrv_pruintc_init(&pruss_intc_initdata);
 
-    prussdrv_map_prumem (PRUSS0_PRU0_DATARAM, &pru_mem);
-    if(pru_mem == NULL)
+    prussdrv_map_prumem (PRUSS0_PRU0_DATARAM, &pru_mem0);
+    if(pru_mem0 == NULL)
     {
         printf("ERR, %d\n", __LINE__);
         return -1;
     }
-    right_flag  = (unsigned int*) (pru_mem);
-    right_speed = (unsigned int*) (pru_mem)+1;
+    left_speed_mem = (u_int32*) (pru_mem0);
 
-    prussdrv_map_prumem (PRUSS0_PRU1_DATARAM, &pru_mem);
-    if(pru_mem == NULL)
+    prussdrv_map_prumem (PRUSS0_PRU1_DATARAM, &pru_mem1);
+    if(pru_mem1 == NULL)
     {
         printf("ERR, %d\n", __LINE__);
         return -1;
     }
 
-    left_flag  = (unsigned int*) (pru_mem);
-    left_speed = (unsigned int*) (pru_mem)+1;
+    right_speed_mem = (u_int32*) (pru_mem1);
 
     /* Execute example on PRU */
     prussdrv_exec_program (0, "./hm_pru0.bin");
     prussdrv_exec_program (1, "./hm_pru1.bin");
-
-*left_flag=0;
-*left_speed=1;
-
-*right_flag=2;
-*right_speed=3;
 
     return(0);
 }
@@ -159,9 +165,11 @@ void motor_init()
     regist_cmd_cb(BA_MOTION_CMD, parser_motion_cmd);
 }
 
-int parser_motion_cmd(struct s_base_motion *cmd)
+int parser_motion_cmd(void * msg)
 {
-    if(cmd == NULL)  return -1;
+    if(msg == NULL)  return -1;
+
+	struct s_base_motion *cmd = (struct s_base_motion *)msg;
 
     if(cmd->left_action == START_ACTION)
     {
@@ -214,35 +222,34 @@ int parser_motion_cmd(struct s_base_motion *cmd)
     return 0;
 }
 
-void *detect_left_speed(void *data)
+/* using PID */
+void speed_adjust(int speed_desired, int speed_current, int time_ms, int pwm)
+{
+	
+}
+
+void *detect_speed(void *data)
 {
     u_int32 cnt=0;
-    printf("get_motor_left_speed...\n");
+	speed_int = 0;
     for(;;)
     {
-		*left_flag=0;
-		*left_speed=0;
-        sleep(1);
-        printf("left flag=0x%x(%d/s),SPEED=0x%x\n", *left_flag, *left_flag/200000000, *left_speed);
+		*left_speed_mem=0;
+		*right_speed_mem=0;
+        usleep(100);
+		memcpy(&left_speed_pulse, left_speed_mem, sizeof(int));
+		left_speed_mm = (u_int32)((double)left_speed_pulse*(double)WHEEL_RADIUS*2*3.14/200000000.0)*10;
+		
+		memcpy(&right_speed_pulse, right_speed_mem, sizeof(int));
+		right_speed_mm = (u_int32)((double)right_speed_pulse*(double)WHEEL_RADIUS*2.0*3.14/200000000.0)*10;
+
+		/* intergal control */
+		speed_int += (left_speed_pulse - right_speed_pulse)*0.1;
+
+		cnt++;
     }
-    printf("\n");
 
     return NULL;
 }
 
-void *detect_right_speed(void *data)
-{
-    u_int32 cnt=0;
-    printf("get_motor_right_speed...\n");
-    for(;;)
-    {
-		*right_flag=0;
-		*right_speed=0;
-        sleep(1);
-        printf("right flag=0x%x(%d/s),SPEED=0x%x\n", *right_flag, *right_flag/200000000, *right_speed);
-    }
-    printf("\n");
-
-    return NULL;
-}
 
