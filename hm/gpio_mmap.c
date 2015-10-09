@@ -359,14 +359,12 @@ int gpio_init()
     if(varify_gpio()<0)
         return -1;
 
-    
     gpio_fd  = open("/dev/mem", O_RDWR);
     if(gpio_fd < 0)
     {
         printf("Open /dev/gpio_mem failed!\n");
         return -1;
     }
-
     ctrl_addr = (unsigned int *)mmap(0, CONTROL_LEN, PROT_READ | PROT_WRITE, MAP_SHARED , gpio_fd, CONTROL_MODULE);
     if(ctrl_addr == MAP_FAILED)
     {
@@ -424,6 +422,7 @@ int gpio_init()
 
         gpio_set_dir(gpio_used[i][1], gpio_used[i][2], gpio_used[i][3]);
     }
+	return 0;
 }
 
 int gpio_exit()

@@ -46,10 +46,16 @@ int system_init()
     m_state.m_right_pwm = 0;
     
     if(r_message_init() < 0)
+	{
+		printf("r_message_init failed!\n");
         return -1;
+	}
 
     if(r_timer_init() < 0)
+	{
+		printf("r_timer_init failed!\n");
         return -1;
+	}
 
     #ifdef ENABLE_LED
     led_regist();
@@ -73,7 +79,10 @@ int system_init()
 
 	#if defined(ENABLE_GPIO_MMAP) || defined(ENABLE_GPIO_DTS)
     if(gpio_init() < 0)
+	{
+		printf("gpio_init failed!\n");
         return -1;
+	}
 	#endif
 
     #ifdef ENABLE_USONIC
@@ -152,7 +161,10 @@ int main(int argc, char *argv[])
     #endif
 
     if(system_init() < 0)
+	{
+		printf("system_init failed!\n");
         return -1;
+	}
 
     #ifdef ENABLE_VIDEO
     video_start(0);
@@ -163,7 +175,7 @@ int main(int argc, char *argv[])
     #endif
 
     #ifdef ENABLE_USONIC
-    set_timer(R_MSG_USONIC_DETECT, R_TIMER_LOOP, 100, usonic_detect, NULL);
+    set_timer(R_MSG_USONIC_DETECT, R_TIMER_LOOP, 50, usonic_detect, NULL);
     #endif
 
 //    set_timer(R_MSG_SERVO_0, R_TIMER_LOOP, 1000, servo_0_rotating, 0);
@@ -187,7 +199,6 @@ int main(int argc, char *argv[])
     #ifdef ENABLE_WIFI_LOC
     pthread_create(&wifi_loc_thd, NULL, &wifi_location, NULL);
     #endif
-
     while(1)
     {
         feed_wtdog();

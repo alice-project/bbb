@@ -56,7 +56,7 @@ DELAY:
 /*************** PRU0 ***********************/
 .macro LEFT_MOTOR_SPEED_PROC
     MOV r0, CONTROL_0
-    MOV r1, 33       // 
+    MOV r1, 33       //
 
     MOV r2, 0         // r2 stores the cycle counter
     MOV r3, 0xffffffff    // r3 stores infinite value

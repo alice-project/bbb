@@ -43,8 +43,13 @@ int change_usonic_addr(int fd, unsigned char new_addr)
 
 int usonic_init()
 {
-    usonic_addr[LEFT_FRONT] = 0x70;     
+    usonic_addr[LEFT_FRONT] = USONIC_0_ADDR;     
     return 0;
+}
+
+int usonic_regist()
+{
+	return 0;
 }
 
 extern int report_distance_info(struct s_hm_distance *data);
@@ -52,8 +57,7 @@ int usonic_detect_item(int item)
 {
     int dist_hi, dist_lo;
     struct s_hm_distance data;
-    int fd_usonic = i2c_open(2, usonic_addr[item]);
-printf("fd_usonic=%d\n", fd_usonic);
+    int fd_usonic = i2c_open(1, usonic_addr[item]);
 
     if(i2c_smbus_write_byte_data(fd_usonic, 2, 0xb4) < 0)
        printf("WRITE error(%d):%s\n", errno, strerror(errno));
@@ -68,7 +72,7 @@ printf("fd_usonic=%d\n", fd_usonic);
         dist_lo = 0;
 
     usonic_distance[item] = dist_hi*255 + dist_lo;
-//    printf("distance=%d\n",usonic_distance[item]);
+    printf("distance=%d\n",usonic_distance[item]);
 
     data.ssonic_id=0;
     data.distance=usonic_distance[item];

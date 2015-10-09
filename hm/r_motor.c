@@ -223,20 +223,25 @@ int parser_motion_cmd(void * msg)
 }
 
 /* using PID */
-void speed_adjust(int speed_desired, int speed_current, int time_ms, int pwm)
+u_int32 speed_adjust(int speed_desired, int speed_current, int speed_int, u_int32 pwm)
 {
-	
+	u_int32 new_pwm;
+	float K, M;
+
+	new_pwm = pwm+K*(speed_desired-speed_current)+M*speed_int;
+	return new_pwm;
 }
 
 void *detect_speed(void *data)
 {
     u_int32 cnt=0;
 	speed_int = 0;
+
+	u_int32 new_pwm;
+	*left_speed_mem=0;
+	*right_speed_mem=0;        
     for(;;)
     {
-		*left_speed_mem=0;
-		*right_speed_mem=0;
-        usleep(100);
 		memcpy(&left_speed_pulse, left_speed_mem, sizeof(int));
 		left_speed_mm = (u_int32)((double)left_speed_pulse*(double)WHEEL_RADIUS*2*3.14/200000000.0)*10;
 		
@@ -247,6 +252,15 @@ void *detect_speed(void *data)
 		speed_int += (left_speed_pulse - right_speed_pulse)*0.1;
 
 		cnt++;
+		if((cnt%10)==0)
+		{
+			new_pwm=speed_adjust(left_speed_pulse, right_speed_pulse, speed_int, get_wheel_pwm(LEFT_SIDE));
+
+			cnt=0;
+		}
+		*left_speed_mem=0;
+		*right_speed_mem=0;        
+		usleep(100000);
     }
 
     return NULL;

@@ -59,11 +59,12 @@
 
 	/* ------ MPU6050 ------ */
 		/* the pin header uses */
-		"P9.18",	/* i2c1_sda */
-		"P9.17",	/* i2c1_scl */
+		"P9.20",	/* i2c2_sda */
+		"P9.19",	/* i2c2_scl */
         "P8.7",     /* interrupt flag */
 		/* the hardware ip uses */
-		"i2c1";
+		"i2c1",
+		"i2c2";
 
 	/* ----------- PWM ------------ */
 	fragment@10 {
@@ -250,8 +251,8 @@
 		__overlay__ {
 			hm_gyro_pins: pinmux_hm_gyro_pins {
 				pinctrl-single,pins = <
-					0x158 0x72	/* spi0_d1.i2c1_sda, SLEWCTRL_SLOW | INPUT_PULLUP | MODE2 */
-					0x15c 0x72	/* spi0_cs0.i2c1_scl, SLEWCTRL_SLOW | INPUT_PULLUP | MODE2 */
+					0x178 0x73	/* spi0_d1.i2c1_sda, SLEWCTRL_SLOW | INPUT_PULLUP | MODE2 */
+					0x17c 0x73	/* spi0_cs0.i2c1_scl, SLEWCTRL_SLOW | INPUT_PULLUP | MODE2 */
                     0x90 0x37   /* gpio2[2] acts as the interrupt flag */
 				>;
 			};
