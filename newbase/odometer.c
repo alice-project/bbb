@@ -25,8 +25,8 @@ struct _OdometerPrivate {
     guint   min;
 };
 
-const gint WIDTH = 100;
-const gint HEIGHT = 100;
+const gint WIDTH = 200;
+const gint HEIGHT = 200;
 
 
 /* Internal API */

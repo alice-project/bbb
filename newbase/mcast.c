@@ -13,7 +13,8 @@
 #include "pub.h"
 #include "common.h"
 
-extern unsigned int d_my_ipaddr;
+extern guint d_my_ipaddr;
+extern guint g_release_thrds;
 
 static int mc_sockfd = -1;
 
@@ -34,14 +35,14 @@ gpointer multicast_guard()
     mc_sockfd = socket(AF_INET, SOCK_DGRAM, 0);
     if (mc_sockfd < 0) 
     {
-        BASE_LOG("[MCAST] Socket failed\n");
+        g_printf("[MCAST] Socket failed\n");
         return NULL;
     }
     
     memset(&m_req, 0, sizeof(struct ip_mreqn));
     if ((m_group = gethostbyname(MUL_IPADDR)) == NULL) 
     {
-        BASE_LOG("[MCAST] Socket failed\n");
+        g_printf("[MCAST] Socket failed\n");
         return NULL;
     }
     
@@ -52,7 +53,7 @@ gpointer multicast_guard()
     
     if (setsockopt(mc_sockfd, IPPROTO_IP, IP_ADD_MEMBERSHIP, &m_req, sizeof(struct ip_mreqn)) == -1) 
     {
-        BASE_LOG("[MCAST] Socket failed\n");
+        g_printf("[MCAST] Socket failed\n");
         return NULL;
     }
     
@@ -63,20 +64,23 @@ gpointer multicast_guard()
 
     if (inet_pton(AF_INET, MUL_IPADDR, &remote_addr.sin_addr) <= 0) 
     {
-        BASE_LOG("[MCAST] Socket failed\n");
+        g_printf("[MCAST] Socket failed\n");
         return NULL;
     }
     
     if (bind(mc_sockfd, (struct sockaddr *) &remote_addr,sizeof(struct sockaddr_in)) == -1) 
     {
-        BASE_LOG("[MCAST] Socket failed\n");
+        g_printf("[MCAST] Socket failed\n");
         return NULL;
     }
 
-    BASE_LOG("[MCAST] ok!\n");
+    g_printf("[MCAST] ok!\n");
     
     for(;;) 
     {
+        if(g_release_thrds)
+            break;
+
         n = recvfrom(mc_sockfd, rcv_buf, BUFLEN, 0, (struct sockaddr *) &remote_addr, &socklen);
         if (n < sizeof(struct s_com)) {
             continue;
@@ -125,6 +129,7 @@ gpointer multicast_guard()
         sleep(10);
     }
 
+printf("exit from mcast\n");   
     return NULL;
 }
 

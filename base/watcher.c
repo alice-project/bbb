@@ -24,9 +24,9 @@ extern unsigned char *video_frame;
 unsigned int frame_size=0;
 
 GSList *g_watchers = NULL;
-pthread_t hm_thread[MAX_HAMTERS] = {0};
+pthread_t hm_thread[MAX_SUNXINGZHES] = {0};
 int g_hm_id = 0;
-struct s_hm g_hms[MAX_HAMTERS] = {-1};
+struct s_hm g_hms[MAX_SUNXINGZHES] = {-1};
 
 int sw_sockfd = -1;
 
@@ -63,11 +63,11 @@ void *hm_func(void *data)
 {
     int n;
     struct s_com *msg;
-    struct s_hm_video *video;
+    struct s_sxz_video *video;
     struct s_hm *hm = (struct s_hm *)data;
     int slen;
     struct sockaddr_in s_peer;
-    struct s_hm_distance *distance;
+    struct s_sxz_distance *distance;
 
     if(hm->fd < 0)
     {
@@ -93,14 +93,14 @@ void *hm_func(void *data)
         msg = (struct s_com *)rcvbuffer;
         switch(msg->code)
         {
-            case HM_REPORTING:
+            case XZ_REPORTING:
             {
 //                g_printf("received HM_REPORTING message from (%d)\n", msg->id);
                 break;
             }
-            case HM_DISTANCE:
+            case XZ_DISTANCE:
             {
-                distance = (struct s_hm_distance *)(rcvbuffer + sizeof(struct s_com));
+                distance = (struct s_sxz_distance *)(rcvbuffer + sizeof(struct s_com));
 //                g_printf("received HM_DISTANCE message from (%d): ", msg->id);
 //                g_printf("ssonic(%d).distance=%d\n", distance->ssonic_id, distance->distance);
 set_ssonic1_dist(distance->distance);
@@ -113,9 +113,9 @@ else
 
                 break;
             }
-            case HM_CAMERA:
+            case XZ_CAMERA:
             {
-                video = (struct s_hm_video *)(rcvbuffer+sizeof(struct s_com));
+                video = (struct s_sxz_video *)(rcvbuffer+sizeof(struct s_com));
                 g_printf("received HM_CAMERA message from (%d), size=%d\n", msg->id, video->size);
                 memcpy(video_frame, video->data, video->size);
                 frame_size = video->size;
@@ -143,7 +143,7 @@ gpointer start_watching()
         return NULL;
     }
 
-    for(i=0;i<MAX_HAMTERS;i++)
+    for(i=0;i<MAX_SUNXINGZHES;i++)
     {
         g_hms[i].fd = -1;
     }
@@ -151,7 +151,7 @@ gpointer start_watching()
     memset((void *)&s_addr, 0, sizeof(s_addr));
     s_addr.sin_family = AF_INET;
     s_addr.sin_addr.s_addr = htonl(d_my_ipaddr);
-    s_addr.sin_port = htons(HM_PORT1);
+    s_addr.sin_port = htons(XZ_PORT1);
 
     if(bind(sw_sockfd, (struct sockaddr *)&s_addr, sizeof(s_addr)) < 0)
     {

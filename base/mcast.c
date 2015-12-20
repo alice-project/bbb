@@ -59,7 +59,7 @@ gpointer multicast_guard()
     socklen = sizeof(struct sockaddr_in);
     memset(&remote_addr, 0, socklen);
     remote_addr.sin_family = AF_INET;
-    remote_addr.sin_port = htons(HM_PORT2);
+    remote_addr.sin_port = htons(XZ_PORT2);
 
     if (inet_pton(AF_INET, MUL_IPADDR, &remote_addr.sin_addr) <= 0) 
     {
@@ -90,7 +90,7 @@ gpointer multicast_guard()
 
             switch(rcv_msg->code)
             {
-                case HM_REQUEST_BASE:
+                case XZ_REQUEST_BASE:
                 {
                     snd_msg->code = BA_MC_IPADDR;
                     payload = (struct s_mc_ipaddr *)(snd_msg + sizeof(struct s_com));
@@ -102,9 +102,9 @@ gpointer multicast_guard()
 
                     break;
                 }
-                case MC_REQUEST_HM_ADDR:
+                case MC_REQUEST_XZ_ADDR:
                 {
-                    snd_msg->code = BA_REPLY_HM_ADDR;
+                    snd_msg->code = BA_REPLY_XZ_ADDR;
                     payload = (struct s_mc_ipaddr *)(snd_msg + sizeof(struct s_com));
                     payload->ipaddr = htonl(d_my_ipaddr);
                     memcpy(hm_name, rcv_buf+sizeof(struct s_com), sizeof(struct s_request_base));
@@ -113,7 +113,7 @@ gpointer multicast_guard()
 
                     break;
                 }
-                case HM_REPORTING:
+                case XZ_REPORTING:
                 {
                     printf("receiving reporting from hm\n");
                     break;

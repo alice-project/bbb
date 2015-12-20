@@ -12,8 +12,6 @@
 #include "pub.h"
 #include "common.h"
 
-extern void BASE_LOG(char *buffer);
-
 extern int g_sxz_id;
 extern struct s_sxz g_sxz[];
 
@@ -24,18 +22,18 @@ int send_gc_command(int mode)
     struct s_com *cmd;
     struct s_base_light *light_cmd;
 
-    BASE_LOG("General Control Command is sending ...");
+    g_printf("General Control Command is sending ...");
 
     memset(cmd_buffer, 0, sizeof(cmd_buffer));
     cmd = (struct s_com *)cmd_buffer;
     cmd->code = BA_GC_SETTINGS;
     if(send(g_sxz[g_sxz_id-1].fd, cmd_buffer, BUFLEN, 0) >= 0)
     {
-        BASE_LOG("OK!\n");
+        g_printf("OK!\n");
     }
     else
     {
-        BASE_LOG("FAILED!!\n");
+        g_printf("FAILED!!\n");
     }
 
     return 0;
@@ -56,11 +54,11 @@ int send_light_command(u_int32 cmds)
     light_cmd->on_off = cmds;
     if(send(g_sxz[g_sxz_id-1].fd, cmd_buffer, BUFLEN, 0) >= 0)
     {
-        BASE_LOG("OK!\n");
+        g_printf("OK!\n");
     }
     else
     {
-        BASE_LOG("FAILED!!\n");
+        g_printf("FAILED!!\n");
     }
 
     return 0;
@@ -71,7 +69,7 @@ int send_motion_command(struct s_base_motion *motion)
     struct s_com *common_cmd;
     struct s_base_motion *motion_cmd;
 
-    BASE_LOG("Motion command is sending ...");
+    g_printf("Motion command is sending ...");
 
     memset(cmd_buffer, 0, sizeof(cmd_buffer));
     common_cmd = (struct s_com *)cmd_buffer;
@@ -83,11 +81,11 @@ int send_motion_command(struct s_base_motion *motion)
     motion_cmd->right_data = motion->right_data;
     if(send(g_sxz[g_sxz_id-1].fd, cmd_buffer, BUFLEN, 0) >= 0)
     {
-        BASE_LOG("OK!\n");
+        g_printf("OK!\n");
     }
     else
     {
-        BASE_LOG("FAILED!!\n");
+        g_printf("FAILED!!\n");
     }
 
     return 0;
@@ -98,18 +96,18 @@ int send_test_command()
 {
     struct s_com *common_cmd;
 
-    BASE_LOG("Test command is sending ...");
+    g_printf("Test command is sending ...");
 
     memset(cmd_buffer, 0, sizeof(cmd_buffer));
     common_cmd = (struct s_com *)cmd_buffer;
     common_cmd->code = BA_TEST_CMD;
     if(send(g_sxz[g_sxz_id-1].fd, cmd_buffer, BUFLEN, 0) >= 0)
     {
-        BASE_LOG("OK!\n");
+        g_printf("OK!\n");
     }
     else
     {
-        BASE_LOG("FAILED!!\n");
+        g_printf("FAILED!!\n");
     }
 
     return 0;
@@ -120,7 +118,7 @@ int send_servo_command(int id, int angle)
     struct s_com *common_cmd;
     struct s_base_servo_cmd *servo_cmd;
 
-    BASE_LOG("SERVO command is sending ...");
+    g_printf("SERVO command is sending ...");
 
     memset(cmd_buffer, 0, sizeof(cmd_buffer));
     common_cmd = (struct s_com *)cmd_buffer;
@@ -136,11 +134,11 @@ int send_servo_command(int id, int angle)
     }
     if(send(g_sxz[g_sxz_id-1].fd, cmd_buffer, BUFLEN, 0) >= 0)
     {
-        BASE_LOG("OK!\n");
+        g_printf("OK!\n");
     }
     else
     {
-        BASE_LOG("FAILED!!\n");
+        g_printf("FAILED!!\n");
     }
 
     return 0;
@@ -158,11 +156,11 @@ int send_camera_command(int state)
     camera_cmd->on_off = state;
     if(send(g_sxz[g_sxz_id-1].fd, cmd_buffer, BUFLEN, 0) >= 0)
     {
-        BASE_LOG("OK!\n");
+        g_printf("OK!\n");
     }
     else
     {
-        BASE_LOG("FAILED!!\n");
+        g_printf("FAILED!!\n");
     }
 
     return 0;

@@ -12,8 +12,6 @@
 #include "pub.h"
 #include "common.h"
 
-void BASE_LOG(char *buffer);
-
 extern void set_light1_red();
 extern void set_light1_yellow();
 extern void set_light1_green();
@@ -29,10 +27,11 @@ int g_sxz_id = 0;
 struct s_sxz g_sxz[MAX_SUNXINGZHES] = {-1};
 
 int sw_sockfd = -1;
+extern guint g_release_thrds;
 
 extern void update_video(unsigned char *data, int width, int height);
 
-static gboolean ant_comes(GSocketService    *service,
+static gboolean xingzhe_comes(GSocketService    *service,
                           GSocketConnection *connection,
                           GObject           *src_obj,
                           gpointer           user_data)
@@ -48,11 +47,11 @@ static gboolean ant_comes(GSocketService    *service,
 
 //    gdk_threads_enter();
     
-    BASE_LOG("[WATCHER] Here comes an ant: ");
+    g_printf("[WATCHER] Here comes an monkey: ");
     
     str = g_inet_address_to_string(ip_addr);
-    BASE_LOG(str);
-    BASE_LOG("\n");
+    g_printf(str);
+    g_printf("\n");
 //    gdk_threads_leave();
     
     return TRUE;
@@ -74,8 +73,8 @@ void *sxz_func(void *data)
         printf("FD Error\n");
         return;
     }
-    BASE_LOG("NEW sun xingzhe ");
-    BASE_LOG(" is comming...\n");
+    g_printf("NEW sun xingzhe ");
+    g_printf(" is comming...\n");
 
     for(;;)
     {
@@ -103,13 +102,13 @@ void *sxz_func(void *data)
                 distance = (struct s_sxz_distance *)(rcvbuffer + sizeof(struct s_com));
 //                g_printf("received XZ_DISTANCE message from (%d): ", msg->id);
 //                g_printf("ssonic(%d).distance=%d\n", distance->ssonic_id, distance->distance);
-set_ssonic1_dist(distance->distance);
-if(distance->distance>200)
-    set_light1_green();
-else if(distance->distance>100)
-    set_light1_yellow();
-else
-    set_light1_red();
+                set_ssonic1_dist(distance->distance);
+                if(distance->distance>200)
+                    set_light1_green();
+                else if(distance->distance>100)
+                    set_light1_yellow();
+                else
+                    set_light1_red();
 
                 break;
             }
@@ -139,7 +138,7 @@ gpointer start_watching()
     
     if(sw_sockfd < 0)
     {
-        BASE_LOG("[WATCHER] Socket failed\n");
+        g_printf("[WATCHER] Socket failed\n");
         return NULL;
     }
 
@@ -155,34 +154,37 @@ gpointer start_watching()
 
     if(bind(sw_sockfd, (struct sockaddr *)&s_addr, sizeof(s_addr)) < 0)
     {
-        BASE_LOG("[WATCHER] Bind failed\n");
-printf("d_my_ipaddr=%d.%d.%d.%d\n", d_my_ipaddr>>24, (d_my_ipaddr>>16)&255,(d_my_ipaddr>>8)&255,d_my_ipaddr&255);
+        g_printf("[WATCHER] Bind failed\n");
+        g_printf("d_my_ipaddr=%d.%d.%d.%d\n", d_my_ipaddr>>24, (d_my_ipaddr>>16)&255,(d_my_ipaddr>>8)&255,d_my_ipaddr&255);
         perror("BIND FAILED\n");
         return NULL;
     }
     
     if(listen(sw_sockfd, SOMAXCONN) < 0)
     {
-        BASE_LOG("[WATCHER] Listen failed\n");
+        g_printf("[WATCHER] Listen failed\n");
         return NULL;
     }
 
-    BASE_LOG("[WATCHER] Base is listening...!\n");
+    g_printf("[WATCHER] Base is listening...!\n");
     
     for(;;)
     {
+        if(g_release_thrds)
+            break;
+
         memset(&g_sxz[g_sxz_id].c_addr, 0, sizeof(g_sxz[g_sxz_id].c_addr));
         socklen_t len = sizeof(g_sxz[g_sxz_id].c_addr);
         g_sxz[g_sxz_id].fd = accept(sw_sockfd, (struct sockaddr *)&g_sxz[g_sxz_id].c_addr, &len);
         if(g_sxz[g_sxz_id].fd < 0)
         {
-            BASE_LOG("[WATCHER] Accept failed\n");
+            g_printf("[WATCHER] Accept failed\n");
         }
         else
         {
             if(pthread_create(&sxz_thread[g_sxz_id], NULL, sxz_func, &g_sxz[g_sxz_id]) < 0)
             {
-                BASE_LOG("[WATCHER] pthread_create failed\n");
+                g_printf("[WATCHER] pthread_create failed\n");
                 close(g_sxz[g_sxz_id].fd);
                 g_sxz[g_sxz_id].fd = -1;
                 close(sw_sockfd);
@@ -198,7 +200,8 @@ printf("d_my_ipaddr=%d.%d.%d.%d\n", d_my_ipaddr>>24, (d_my_ipaddr>>16)&255,(d_my
 
     close(sw_sockfd);
     sw_sockfd = -1;
-    
+
+printf("exit from watcher\n");    
     return NULL;
 }
 

@@ -10,7 +10,7 @@ RM = rm -f
 MV = mv
 AR = $(CROSS_COMPILE)ar
 
-OBJS = baseapp.o odometer.o mcast.o watcher.o cmd_util.o
+OBJS = baseapp.o odometer.o mcast.o watcher.o cmd_util.o video.o
 
 all: base
 

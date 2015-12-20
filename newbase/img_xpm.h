@@ -17,6 +17,7 @@
 #include "img16.xpm"
 #include "img17.xpm"
 #include "img18.xpm"
+#include "img19.xpm"
 
 #include "dot.xpm"
 #include "earth.xpm"
@@ -25,6 +26,8 @@
 #include "circle2.xpm"
 #include "circle3.xpm"
 #include "circle4.xpm"
+
+#include "no_img.xpm"
 
 #endif
 

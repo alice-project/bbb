@@ -17,11 +17,14 @@ typedef unsigned char  u_int8;
 typedef unsigned short u_int16;
 typedef unsigned int   u_int32;
 
-#define MAX_HAMTERS 16
+#define MAX_SUNXINGZHES 16
 
 #define MUL_IPADDR  "224.1.1.1"
-#define HM_PORT1  30825
-#define HM_PORT2  30725
+#define XZ_PORT1  30825
+#define XZ_PORT2  30725
+
+#define DEVICE_ON  1
+#define DEVICE_OFF 0
 
 struct s_com
 {
@@ -30,19 +33,19 @@ struct s_com
     u_int16  flags;
 };
 
-struct s_hm_video
+struct s_sxz_video
 {
     u_int32 size;
     u_int8 data[0];
 };
-#define MAX_VIDEO_FRAME_MSG  (64*1024+sizeof(struct s_com)+sizeof(struct s_hm_video))
+#define MAX_VIDEO_FRAME_MSG  (64*1024+sizeof(struct s_com)+sizeof(struct s_sxz_video))
 
 struct s_request_base
 {
     u_int8 name[16];
 };
 
-struct s_hm_distance
+struct s_sxz_distance
 {
     u_int32 ssonic_id;
     u_int32 distance;
@@ -94,26 +97,26 @@ struct s_base_servo_cmd
 };
 
 
-/* fixed message length between BASE and HM */
+/* fixed message length between BASE and XINGZHE */
 #define BUFLEN 256
 
 /* Operation Mode */
 #define MANUAL_MODE 0
 #define AUTO_MODE   1
-struct s_hm_mode
+struct s_xz_mode
 {
     u_int32 mode;
 };
 /*  */
 
 enum {
-    /* 0 ~ 31: hm to base */
-    HM_REQUEST_BASE = 0,
-    HM_REPORTING,
-    HM_CAMERA,
-    HM_DISTANCE,
+    /* 0 ~ 31: XINGZHE to base */
+    XZ_REQUEST_BASE = 0,
+    XZ_REPORTING,
+    XZ_CAMERA,
+    XZ_DISTANCE,
 
-    /* 32 ~ 63: base to hm */
+    /* 32 ~ 63: base to XINGZHE */
     BA_MC_IPADDR = 32,
     BA_GC_SETTINGS,      /* General Control Settings */
     BA_LIGHT_CMD,
@@ -123,9 +126,9 @@ enum {
     BA_PWM_DUTY_CMD,
     BA_PWM_FREQ_CMD,
     BA_CAMERA_CMD,
-    BA_REPLY_HM_ADDR,
+    BA_REPLY_XZ_ADDR,
 
-    MC_REQUEST_HM_ADDR,
+    MC_REQUEST_XZ_ADDR,
     BA_RAWTEXT_CMD,
 };
 
@@ -134,8 +137,6 @@ struct s_base_info
     int fd;
     struct sockaddr_in m_addr;
 };
-
-
 
 #endif
 
