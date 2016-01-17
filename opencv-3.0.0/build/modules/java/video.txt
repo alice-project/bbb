@@ -1,0 +1,88 @@
+PORTED FUNCs LIST (76 of 76):
+
+ void collectGarbage()
+ void calc(Mat I0, Mat I1, Mat& flow)
+ void getBackgroundImage(Mat& backgroundImage)
+ void apply(Mat image, Mat& fgmask, double learningRate = -1)
+ void calcOpticalFlowFarneback(Mat prev, Mat next, Mat& flow, double pyr_scale, int levels, int winsize, int iterations, int poly_n, double poly_sigma, int flags)
+ Mat estimateRigidTransform(Mat src, Mat dst, bool fullAffine)
+ double findTransformECC(Mat templateImage, Mat inputImage, Mat& warpMatrix, int motionType = MOTION_AFFINE, TermCriteria criteria = TermCriteria(TermCriteria::COUNT+TermCriteria::EPS, 50, 0.001), Mat inputMask = Mat())
+ Ptr_DualTVL1OpticalFlow createOptFlow_DualTVL1()
+ RotatedRect CamShift(Mat probImage, Rect& window, TermCriteria criteria)
+ int meanShift(Mat probImage, Rect& window, TermCriteria criteria)
+ int buildOpticalFlowPyramid(Mat img, vector_Mat& pyramid, Size winSize, int maxLevel, bool withDerivatives = true, int pyrBorder = BORDER_REFLECT_101, int derivBorder = BORDER_CONSTANT, bool tryReuseInputImage = true)
+ void calcOpticalFlowPyrLK(Mat prevImg, Mat nextImg, vector_Point2f prevPts, vector_Point2f& nextPts, vector_uchar& status, vector_float& err, Size winSize = Size(21,21), int maxLevel = 3, TermCriteria criteria = TermCriteria(TermCriteria::COUNT+TermCriteria::EPS, 30, 0.01), int flags = 0, double minEigThreshold = 1e-4)
+ Ptr_BackgroundSubtractorMOG2 createBackgroundSubtractorMOG2(int history = 500, double varThreshold = 16, bool detectShadows = true)
+ Ptr_BackgroundSubtractorKNN createBackgroundSubtractorKNN(int history = 500, double dist2Threshold = 400.0, bool detectShadows = true)
+  KalmanFilter()
+  KalmanFilter(int dynamParams, int measureParams, int controlParams = 0, int type = CV_32F)
+ Mat correct(Mat measurement)
+ Mat predict(Mat control = Mat())
+Mat KalmanFilter::statePre
+void KalmanFilter::statePre
+Mat KalmanFilter::statePost
+void KalmanFilter::statePost
+Mat KalmanFilter::transitionMatrix
+void KalmanFilter::transitionMatrix
+Mat KalmanFilter::controlMatrix
+void KalmanFilter::controlMatrix
+Mat KalmanFilter::measurementMatrix
+void KalmanFilter::measurementMatrix
+Mat KalmanFilter::processNoiseCov
+void KalmanFilter::processNoiseCov
+Mat KalmanFilter::measurementNoiseCov
+void KalmanFilter::measurementNoiseCov
+Mat KalmanFilter::errorCovPre
+void KalmanFilter::errorCovPre
+Mat KalmanFilter::gain
+void KalmanFilter::gain
+Mat KalmanFilter::errorCovPost
+void KalmanFilter::errorCovPost
+ double getBackgroundRatio()
+ int getHistory()
+ void setNMixtures(int nmixtures)
+ void setHistory(int history)
+ double getVarInit()
+ void setVarThreshold(double varThreshold)
+ double getVarThresholdGen()
+ int getNMixtures()
+ void setBackgroundRatio(double ratio)
+ void setVarMin(double varMin)
+ double getVarThreshold()
+ void setVarInit(double varInit)
+ void setVarThresholdGen(double varThresholdGen)
+ void setComplexityReductionThreshold(double ct)
+ double getVarMin()
+ double getVarMax()
+ void setVarMax(double varMax)
+ void setDetectShadows(bool detectShadows)
+ int getShadowValue()
+ bool getDetectShadows()
+ void setShadowValue(int value)
+ void setShadowThreshold(double threshold)
+ double getShadowThreshold()
+ double getComplexityReductionThreshold()
+ int getShadowValue()
+ double getShadowThreshold()
+ int getkNNSamples()
+ int getHistory()
+ double getDist2Threshold()
+ void setNSamples(int _nN)
+ void setDist2Threshold(double _dist2Threshold)
+ void setHistory(int history)
+ void setDetectShadows(bool detectShadows)
+ void setShadowValue(int value)
+ int getNSamples()
+ void setkNNSamples(int _nkNN)
+ bool getDetectShadows()
+ void setShadowThreshold(double threshold)
+
+SKIPPED FUNCs LIST (0 of 76):
+
+
+0 def args - 48 funcs
+1 def args - 2 funcs
+2 def args - 1 funcs
+3 def args - 3 funcs
+4 def args - 1 funcs
+5 def args - 1 funcs
