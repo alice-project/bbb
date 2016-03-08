@@ -1,0 +1,16 @@
+#ifndef __XZ_CONFIG_H__
+#define __XZ_CONFIG_H__
+#undef ENABLE_CROSS_COMPILE
+#undef ENABLE_GPIO_MMAP
+#undef ENABLE_GPIO_DTS
+#undef ENABLE_PWM_DTS
+#undef ENABLE_PWM_PRUSS
+#undef ENABLE_I2C_FUNC
+#undef ENABLE_MPU6050
+#undef ENABLE_MOTOR
+#undef ENABLE_USONIC
+#undef ENABLE_LED
+#undef ENABLE_SERVO
+#define ENABLE_VIDEO 1
+#undef ENABLE_WIFI_LOC
+#endif /* __XZ_CONFIG_H__ */
