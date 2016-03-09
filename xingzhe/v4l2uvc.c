@@ -193,40 +193,6 @@ error:
     return -1;
 }
 
-static void dump_v4l2_param(struct vdIn *vd)
-{
-    printf("V4L2 PARAMETER\n");
-    printf("%d\n",  vd->fd);
-    printf("%s\n", vd->videodevice);
-    printf("%s\n", vd->status);
-    printf("%s\n", vd->pictName);
-//    struct v4l2_capability cap;
-//    struct v4l2_format fmt;
-//    struct v4l2_buffer buf;
-//    struct v4l2_requestbuffers rb;
-    printf("%d\n", vd->streamingState);
-    printf("%d\n", vd->grabmethod);
-    printf("%d\n", vd->width);
-    printf("%d\n", vd->height);
-    printf("%d\n", vd->fps);
-    printf("%d\n", vd->formatIn);
-    printf("%d\n", vd->formatOut);
-    printf("%d\n", vd->framesizeIn);
-    printf("%d\n", vd->signalquit);
-    printf("%d\n", vd->toggleAvi);
-    printf("%d\n", vd->getPict);
-    printf("%d\n", vd->rawFrameCapture);
-    printf("%d\n", vd->fileCounter);
-    printf("%d\n", vd->rfsFramesWritten);
-    printf("%d\n", vd->rfsBytesWritten);
-    printf("%d\n", vd->framesWritten);
-    printf("%d\n", vd->bytesWritten);
-    printf("%d\n", vd->framecount);
-    printf("%d\n", vd->recordstart);
-    printf("%d\n", vd->recordtime);
-
-}
-
 static int init_v4l2(struct vdIn *vd)
 {
     int i;
@@ -320,7 +286,6 @@ static int init_v4l2(struct vdIn *vd)
     ret = xioctl(vd->fd, VIDIOC_REQBUFS, &vd->rb);
     if(ret < 0) {
         perror("Unable to allocate buffers");
-        dump_v4l2_param(vd);
         goto fatal;
     }
 
@@ -504,12 +469,9 @@ int uvcGrab(struct vdIn *vd)
 
     ret = xioctl(vd->fd, VIDIOC_QBUF, &vd->buf);
     if(ret < 0) {
-        printf("ret = %d, EAGAIN=%d, EINVAL=%d\n", ret, EAGAIN, EINVAL);
         perror("Unable to requeue buffer");
-//        dump_v4l2_param(vd);
         goto err;
     }
-
     return 0;
 
 err:

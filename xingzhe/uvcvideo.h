@@ -28,8 +28,6 @@
 #include <linux/kernel.h>
 #include <linux/videodev2.h>
 
-#define USE_LIBV4L2
-
 #ifdef USE_LIBV4L2
 #include <libv4l2.h>
 #define IOCTL_VIDEO(fd, req, value) v4l2_ioctl(fd, req, value)

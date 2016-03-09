@@ -24,9 +24,9 @@
 *******************************************************************************/
 
 #include <stdio.h>
+#include <jpeglib.h>
 #include <stdlib.h>
 
-#include "jpeglib.h"
 #include "v4l2uvc.h"
 
 #define OUTPUT_BUF_SIZE  4096

@@ -65,21 +65,6 @@ void signal_handler(int sig)
     }
 
     for(i = 0; i < global.outcnt; i++) {
-        /* skip = 0;
-        DBG("about to decrement usage counter for handle of %s, id #%02d, handle: %p\n", \
-            global.out[i].plugin, global.out[i].param.id, global.out[i].handle);
-        for(j=i+1; j<global.outcnt; j++) {
-          if ( global.out[i].handle == global.out[j].handle ) {
-            DBG("handles are pointing to the same destination (%p == %p)\n", global.out[i].handle, global.out[j].handle);
-            skip = 1;
-          }
-        }
-        if ( skip ) {
-          continue;
-        }
-
-        DBG("closing handle %p\n", global.out[i].handle);
-        */
         dlclose(global.out[i].handle);
     }
     DBG("all plugin handles closed\n");
@@ -90,6 +75,7 @@ void signal_handler(int sig)
     exit(0);
     return;
 }
+
 
 int video_start(int id)
 {

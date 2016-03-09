@@ -1,3 +1,28 @@
+/*******************************************************************************
+# Linux-UVC streaming input-plugin for MJPG-streamer                           #
+#                                                                              #
+# This package work with the Logitech UVC based webcams with the mjpeg feature #
+#                                                                              #
+# Copyright (C) 2005 2006 Laurent Pinchart &&  Michel Xhaard                   #
+#                    2007 Lucas van Staden                                     #
+#                    2007 Tom Stöveken                                         #
+#                                                                              #
+# This program is free software; you can redistribute it and/or modify         #
+# it under the terms of the GNU General Public License as published by         #
+# the Free Software Foundation; either version 2 of the License, or            #
+# (at your option) any later version.                                          #
+#                                                                              #
+# This program is distributed in the hope that it will be useful,              #
+# but WITHOUT ANY WARRANTY; without even the implied warranty of               #
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the                #
+# GNU General Public License for more details.                                 #
+#                                                                              #
+# You should have received a copy of the GNU General Public License            #
+# along with this program; if not, write to the Free Software                  #
+# Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA    #
+#                                                                              #
+*******************************************************************************/
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
@@ -14,12 +39,11 @@
 #include <pthread.h>
 #include <syslog.h>
 
-#include "utils.h"
-#include "v4l2uvc.h"
+#include "v4l2uvc.h" // this header will includes the ../../mjpg_streamer.h
 #include "huffman.h"
 #include "jpeg_utils.h"
 #include "dynctrl.h"
-//#include "uvcvideo.h"
+#include "utils.h"
 
 #define INPUT_PLUGIN_NAME "UVC webcam grabber"
 
@@ -50,9 +74,20 @@ static int dynctrls = 1;
 
 void *cam_thread(void *);
 void cam_cleanup(void *);
+void help(void);
 int input_cmd(int plugin, unsigned int control, unsigned int group, int value);
 
 
+/*** plugin interface functions ***/
+/******************************************************************************
+Description.: This function ializes the plugin. It parses the commandline-
+              parameter and stores the default and parsed values in the
+              appropriate variables.
+Input Value.: param contains among others the command-line string
+Return Value: 0 if everything is fine
+              1 if "--help" was triggered, in this case the calling programm
+              should stop running and leave.
+******************************************************************************/
 int input_init(input_parameter *param, int id)
 {
     char *dev = "/dev/video0", *s;
@@ -77,6 +112,7 @@ int input_init(input_parameter *param, int id)
         static struct option long_options[] = {
             {"h", no_argument, 0, 0
             },
+            {"help", no_argument, 0, 0},
             {"d", required_argument, 0, 0},
             {"device", required_argument, 0, 0},
             {"r", required_argument, 0, 0},
@@ -102,8 +138,22 @@ int input_init(input_parameter *param, int id)
         /* no more options to parse */
         if(c == -1) break;
 
+        /* unrecognized option */
+        if(c == '?') {
+            help();
+            return 1;
+        }
+
         /* dispatch the given options */
         switch(option_index) {
+            /* h, help */
+        case 0:
+        case 1:
+            DBG("case 0,1\n");
+            help();
+            return 1;
+            break;
+
             /* d, device */
         case 2:
         case 3:
@@ -186,6 +236,7 @@ int input_init(input_parameter *param, int id)
 
         default:
             DBG("default case\n");
+            help();
             return 1;
         }
     }
@@ -259,6 +310,46 @@ int input_run(int id)
     pthread_create(&(cams[id].threadID), NULL, cam_thread, &(cams[id]));
     pthread_detach(cams[id].threadID);
     return 0;
+}
+
+/*** private functions for this plugin below ***/
+/******************************************************************************
+Description.: print a help message to stderr
+Input Value.: -
+Return Value: -
+******************************************************************************/
+void help(void)
+{
+    int i;
+
+    fprintf(stderr, " ---------------------------------------------------------------\n" \
+    " Help for input plugin..: "INPUT_PLUGIN_NAME"\n" \
+    " ---------------------------------------------------------------\n" \
+    " The following parameters can be passed to this plugin:\n\n" \
+    " [-d | --device ].......: video device to open (your camera)\n" \
+    " [-r | --resolution ]...: the resolution of the video device,\n" \
+    "                          can be one of the following strings:\n" \
+    "                          ");
+
+    for(i = 0; i < LENGTH_OF(resolutions); i++) {
+        fprintf(stderr, "%s ", resolutions[i].string);
+        if((i + 1) % 6 == 0)
+            fprintf(stderr, "\n                          ");
+    }
+    fprintf(stderr, "\n                          or a custom value like the following" \
+    "\n                          example: 640x480\n");
+
+    fprintf(stderr, " [-f | --fps ]..........: frames per second\n" \
+    " [-y | --yuv ]..........: enable YUYV format and disable MJPEG mode\n" \
+    " [-q | --quality ]......: JPEG compression quality in percent \n" \
+    "                          (activates YUYV format, disables MJPEG)\n" \
+    " [-m | --minimum_size ].: drop frames smaller then this limit, useful\n" \
+    "                          if the webcam produces small-sized garbage frames\n" \
+    "                          may happen under low light conditions\n" \
+    " [-n | --no_dynctrl ]...: do not initalize dynctrls of Linux-UVC driver\n" \
+    " [-l | --led ]..........: switch the LED \"on\", \"off\", let it \"blink\" or leave\n" \
+    "                          it up to the driver using the value \"auto\"\n" \
+    " ---------------------------------------------------------------\n\n");
 }
 
 /******************************************************************************

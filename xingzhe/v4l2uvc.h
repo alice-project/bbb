@@ -36,9 +36,7 @@
 #include <sys/mman.h>
 #include <sys/select.h>
 #include <linux/videodev2.h>
-
 #include "r_video.h"
-
 #define NB_BUFFER 4
 
 
@@ -54,7 +52,7 @@
 int xioctl(int fd, int IOCTL_X, void *arg);
 
 #ifdef USE_LIBV4L2
-#include "libv4l2.h"
+#include <libv4l2.h>
 #define IOCTL_VIDEO(fd, req, value) v4l2_ioctl(fd, req, value)
 #define OPEN_VIDEO(fd, flags) v4l2_open(fd, flags)
 #define CLOSE_VIDEO(fd) v4l2_close(fd)

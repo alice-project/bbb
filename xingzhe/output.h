@@ -35,10 +35,10 @@ struct _output_parameter {
 };
 
 
-
 /* structure to store variables/functions for output plugin */
 typedef struct _output output;
 struct _output {
+    int fd_base;
     char *plugin;
     void *handle;
     output_parameter param;
@@ -46,7 +46,6 @@ struct _output {
     // input plugin parameters
     struct _control *out_parameters;
     int parametercount;
-    int fd_base;
 
     int (*init)(output_parameter *param, int id);
     int (*stop)(int);
