@@ -272,6 +272,88 @@ static void system_setting(GtkButton* button, GtkWidget* pWindow)
     
 }
 
+static void send_motor_cmd_left_pos(GtkButton* button, gpointer data)
+{
+    send_motion_command(LEFT_ROTATE_POSITIVE);
+}
+
+static void send_motor_cmd_left_stop(GtkButton* button, gpointer data)
+{
+    send_motion_command(LEFT_ROTATE_STOP);
+}
+
+static void send_motor_cmd_left_neg(GtkButton* button, gpointer data)
+{
+    send_motion_command(LEFT_ROTATE_NEGATIVE);
+}
+
+static void send_motor_cmd_right_pos(GtkButton* button, gpointer data)
+{
+    send_motion_command(RIGHT_ROTATE_POSITIVE);
+}
+
+static void send_motor_cmd_right_stop(GtkButton* button, gpointer data)
+{
+    send_motion_command(RIGHT_ROTATE_STOP);
+}
+
+static void send_motor_cmd_right_neg(GtkButton* button, gpointer data)
+{
+    send_motion_command(RIGHT_ROTATE_NEGATIVE);
+}
+
+static void smartcar_dlg(GtkButton* button, GtkWidget* pWindow)
+{
+    GtkWidget *btn_left_stop;
+    GtkWidget *btn_left_neg;
+    GtkWidget *btn_left_pos;
+    GtkWidget *btn_right_stop;
+    GtkWidget *btn_right_neg;
+    GtkWidget *btn_right_pos;
+    GtkWidget *vbox1;
+    GtkWidget *vbox2;
+    GtkWidget *hbox;
+
+    GtkWidget *smartcar = gtk_window_new(GTK_WINDOW_TOPLEVEL);
+    gtk_window_set_modal(GTK_WINDOW(smartcar), TRUE);
+    gtk_window_set_default_size (GTK_WINDOW(smartcar), 400,300);
+    gtk_window_set_title(GTK_WINDOW(smartcar), "SMARTCAR");
+    gtk_window_set_has_resize_grip(GTK_WINDOW(smartcar), FALSE);
+
+    hbox = gtk_box_new (GTK_ORIENTATION_HORIZONTAL, 0);
+    gtk_container_set_border_width (GTK_CONTAINER (hbox), 20);
+    gtk_container_add (GTK_CONTAINER (smartcar), hbox);
+
+    vbox1 = gtk_box_new (GTK_ORIENTATION_VERTICAL, 0);
+    btn_left_pos = gtk_button_new_with_label("left pos");
+    g_signal_connect (btn_left_pos, "clicked", G_CALLBACK (send_motor_cmd_left_pos), NULL);
+    btn_left_stop = gtk_button_new_with_label("left stop");
+    g_signal_connect (btn_left_stop, "clicked", G_CALLBACK (send_motor_cmd_left_stop), NULL);
+    btn_left_neg = gtk_button_new_with_label("left neg");
+    g_signal_connect (btn_left_neg, "clicked", G_CALLBACK (send_motor_cmd_left_neg), NULL);
+    gtk_box_pack_start (GTK_BOX (vbox1), btn_left_pos, TRUE, TRUE, 10);
+    gtk_box_pack_start (GTK_BOX (vbox1), btn_left_stop, TRUE, TRUE, 10);
+    gtk_box_pack_start (GTK_BOX (vbox1), btn_left_neg, TRUE, TRUE, 10);
+
+    vbox2 = gtk_box_new (GTK_ORIENTATION_VERTICAL, 0);
+    btn_right_pos = gtk_button_new_with_label("right pos");
+    g_signal_connect (btn_right_pos, "clicked", G_CALLBACK (send_motor_cmd_right_pos), NULL);
+    btn_right_stop = gtk_button_new_with_label("right stop");
+    g_signal_connect (btn_right_stop, "clicked", G_CALLBACK (send_motor_cmd_right_stop), NULL);
+    btn_right_neg = gtk_button_new_with_label("right neg");
+    g_signal_connect (btn_right_neg, "clicked", G_CALLBACK (send_motor_cmd_right_neg), NULL);
+    gtk_box_pack_start (GTK_BOX (vbox2), btn_right_pos, TRUE, TRUE, 10);
+    gtk_box_pack_start (GTK_BOX (vbox2), btn_right_stop, TRUE, TRUE, 10);
+    gtk_box_pack_start (GTK_BOX (vbox2), btn_right_neg, TRUE, TRUE, 10);
+
+    gtk_box_pack_start (GTK_BOX (hbox), vbox1, TRUE, TRUE, 15);
+    gtk_box_pack_start (GTK_BOX (hbox), vbox2, TRUE, TRUE, 15);
+
+    gtk_widget_show_all(smartcar);
+
+}
+
+
 static void confirm_quit_dlg(GtkButton* button, GtkWidget* pWindow)
 {
     gint choice;
@@ -303,7 +385,7 @@ GtkWidget *create_left_box()
 {
     GtkWidget *button_box;
     GtkWidget *button_quadmotor;
-    GtkWidget *button_plane;
+    GtkWidget *button_smartcar;
     GtkWidget *button_robot;
     GtkWidget *button_camera;
     GtkWidget *button_setting;
@@ -326,11 +408,12 @@ GtkWidget *create_left_box()
                     G_CALLBACK (start_all),
                     (gpointer) m_win);
 */
-    button_plane = gtk_button_new();
-    gtk_box_pack_start (GTK_BOX (button_box), button_plane, TRUE, FALSE, 0);
+    button_smartcar = gtk_button_new();
+    gtk_box_pack_start (GTK_BOX (button_box), button_smartcar, TRUE, FALSE, 0);
     pixbuf_img = gdk_pixbuf_new_from_xpm_data(img8_xpm);
     img_plane = gtk_image_new_from_pixbuf(pixbuf_img);
-    gtk_button_set_image(GTK_BUTTON(button_plane), img_plane);
+    gtk_button_set_image(GTK_BUTTON(button_smartcar), img_plane);
+    g_signal_connect (button_smartcar, "clicked", G_CALLBACK (smartcar_dlg), (gpointer) m_win);
     g_object_unref(G_OBJECT(pixbuf_img));
 
     button_robot = gtk_button_new();

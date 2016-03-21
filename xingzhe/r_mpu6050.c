@@ -3102,7 +3102,7 @@ int cnt=0;
 
 			pthread_mutex_unlock(&mutex_i2c);
 
-        	printf("\npoll() GPIO %d interrupt occurred, cnt=%d, sensor=%d\n", 66, cnt++, sensors);
+//        	printf("\npoll() GPIO %d interrupt occurred, cnt=%d, sensor=%d\n", 66, cnt++, sensors);
 
 			if (sensors & INV_XYZ_GYRO) {
 				// Send data to the client application in quat packet type format

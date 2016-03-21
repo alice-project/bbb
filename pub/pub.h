@@ -69,6 +69,13 @@ struct s_base_camera_cmd
     u_int32 on_off;
 };
 
+/* ACTION DEFINITION */
+#define LEFT_ROTATE_POSITIVE    0
+#define LEFT_ROTATE_STOP        1
+#define LEFT_ROTATE_NEGATIVE    2
+#define RIGHT_ROTATE_POSITIVE   3
+#define RIGHT_ROTATE_STOP       4
+#define RIGHT_ROTATE_NEGATIVE   5
 
 /**/
 #define LEFT_SIDE  0

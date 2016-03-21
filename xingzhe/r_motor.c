@@ -171,6 +171,7 @@ int parser_motion_cmd(void * msg)
 
 	struct s_base_motion *cmd = (struct s_base_motion *)msg;
 
+printf("parser_motion_cmd -- %d:%d  %d:%d\n", cmd->left_action, cmd->left_data, cmd->right_action, cmd->right_data);
     if(cmd->left_action == START_ACTION)
     {
         start_chassis();

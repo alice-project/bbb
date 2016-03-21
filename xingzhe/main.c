@@ -52,14 +52,12 @@ int system_init()
         return -1;
     }
     
-    if(r_message_init() < 0)
-	{
+    if(r_message_init() < 0) {
 		printf("r_message_init failed!\n");
         return -1;
 	}
 
-    if(r_timer_init() < 0)
-	{
+    if(r_timer_init() < 0) {
 		printf("r_timer_init failed!\n");
         return -1;
 	}
@@ -85,16 +83,14 @@ int system_init()
     #endif
 
 	#if defined(ENABLE_GPIO_MMAP) || defined(ENABLE_GPIO_DTS)
-    if(gpio_init() < 0)
-	{
+    if(gpio_init() < 0) {
 		printf("gpio_init failed!\n");
         return -1;
 	}
 	#endif
 
     #ifdef ENABLE_USONIC
-    if(usonic_init() < 0)
-    {
+    if(usonic_init() < 0) {
         printf("USONIC INIT failed!\n");
         return -1;
     }
@@ -111,8 +107,7 @@ int system_init()
     #endif
 
     #ifdef ENABLE_VEDIO
-    if(video_init(0) < 0)
-    {
+    if(video_init(0) < 0) {
         printf("VIDEO INIT failed!\n");
         return -1;
     }
@@ -167,8 +162,7 @@ int main(int argc, char *argv[])
     pthread_t wifi_loc_thd;
     #endif
 
-    if(system_init() < 0)
-	{
+    if(system_init() < 0) {
 		printf("system_init failed!\n");
         return -1;
 	}
@@ -200,7 +194,7 @@ int main(int argc, char *argv[])
 	#endif
 
     #ifdef ENABLE_MPU6050
-//    pthread_create(&mpu_thread, NULL, &mpu6050_detect_with_dmp, NULL);
+    pthread_create(&mpu_thread, NULL, &mpu6050_detect_with_dmp, NULL);
     #endif
 
     #ifdef ENABLE_WIFI_LOC

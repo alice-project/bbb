@@ -24,8 +24,8 @@
 *******************************************************************************/
 
 #include <stdio.h>
-#include <jpeglib.h>
 #include <stdlib.h>
+#include "jpeglib.h"
 
 #include "v4l2uvc.h"
 

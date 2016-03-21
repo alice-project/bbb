@@ -13,7 +13,7 @@ CFLAGS += -mtune=cortex-a8 -march=armv7-a -ffast-math
 LDLIBS += -L./ -L/usr/arm-linux-gnueabi/lib -L../cross
 endif
 LDFLAGS =
-INC = -I ../pub/ -I ../cross
+INC = -I ../pub/ -I ../cross -I ./
 LN = $(CC)
 RM = rm -f
 MV = mv

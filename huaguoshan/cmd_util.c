@@ -64,27 +64,52 @@ int send_light_command(u_int32 cmds)
     return 0;
 }
 
-int send_motion_command(struct s_base_motion *motion)
+int send_motion_command(guint32 cmds)
 {
     struct s_com *common_cmd;
     struct s_base_motion *motion_cmd;
 
-    g_printf("Motion command is sending ...");
+    g_printf("Motion command is sending ... %d\n", cmds);
 
     memset(cmd_buffer, 0, sizeof(cmd_buffer));
     common_cmd = (struct s_com *)cmd_buffer;
     common_cmd->code = BA_MOTION_CMD;
     motion_cmd = (struct s_base_motion *)(cmd_buffer + sizeof(struct s_com));
-    motion_cmd->left_action = motion->left_action;
-    motion_cmd->left_data = motion->left_data;
-    motion_cmd->right_action = motion->right_action;
-    motion_cmd->right_data = motion->right_data;
-    if(send(g_sxz[g_sxz_id-1].fd, cmd_buffer, BUFLEN, 0) >= 0)
-    {
-        g_printf("OK!\n");
+
+    motion_cmd->left_action  = NULL_ACTION;
+    motion_cmd->right_action = NULL_ACTION;
+    switch (cmds) {
+        case LEFT_ROTATE_POSITIVE:
+            motion_cmd->left_action = START_ACTION;
+            motion_cmd->left_data   = POSITIVE_DIR;
+            break;
+        case LEFT_ROTATE_STOP:
+            motion_cmd->left_action = STOP_ACTION;
+            motion_cmd->left_data   = POSITIVE_DIR;
+            break;
+        case LEFT_ROTATE_NEGATIVE:
+            motion_cmd->left_action = START_ACTION;
+            motion_cmd->left_data   = NEGATIVE_DIR;
+            break;
+        case RIGHT_ROTATE_POSITIVE:
+            motion_cmd->right_action = START_ACTION;
+            motion_cmd->right_data   = POSITIVE_DIR;
+            break;
+        case RIGHT_ROTATE_STOP:
+            motion_cmd->right_action = STOP_ACTION;
+            motion_cmd->right_data   = POSITIVE_DIR;
+            break;
+        case RIGHT_ROTATE_NEGATIVE:
+            motion_cmd->right_action = START_ACTION;
+            motion_cmd->right_data   = NEGATIVE_DIR;
+            break;
+        default:
+            break;
     }
-    else
-    {
+
+    if(send(g_sxz[g_sxz_id-1].fd, cmd_buffer, BUFLEN, 0) >= 0) {
+        g_printf("OK!\n");
+    } else {
         g_printf("FAILED!!\n");
     }
 
