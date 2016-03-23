@@ -24,8 +24,8 @@ int32 speed_int;
 const int motor_pin[][6] = {
     /* connector, PIN */
     /* dir ctrl, dir ctrl, speed ctrl  */
-    {9, 11, 9, 12, 8, 13},        /* Left DC MOTOR control & dir */
-    {9, 13, 9, 14, 8, 19},        /* Right DC MOTOR control & dir */
+    {9, 13, 9, 14, 8, 19},        /* Left DC MOTOR control & dir */
+    {9, 11, 9, 12, 8, 13},        /* Right DC MOTOR control & dir */
 };
 
 const int motor_decoder_pin[2][2] = {
@@ -171,52 +171,40 @@ int parser_motion_cmd(void * msg)
 
 	struct s_base_motion *cmd = (struct s_base_motion *)msg;
 
-printf("parser_motion_cmd -- %d:%d  %d:%d\n", cmd->left_action, cmd->left_data, cmd->right_action, cmd->right_data);
-    if(cmd->left_action == START_ACTION)
-    {
-        start_chassis();
-        if(cmd->left_data == POSITIVE_DIR)
-        {
+    if(cmd->left_action == START_ACTION) {
+        start_motor(0);
+        if(cmd->left_data == POSITIVE_DIR) {
             set_pin_high(motor_pin[0][0], motor_pin[0][1]);
             set_pin_low(motor_pin[0][2], motor_pin[0][3]);
-        }
-        else if(cmd->left_data == NEGATIVE_DIR)
-        {
+        } else if(cmd->left_data == NEGATIVE_DIR) {
             set_pin_low(motor_pin[0][0], motor_pin[0][1]);
             set_pin_high(motor_pin[0][2], motor_pin[0][3]);
         }
     }
-    if(cmd->left_action == SET_DUTY_ACTION)
-    {
+    if(cmd->left_action == SET_DUTY_ACTION) {
         if(pwm_set_duty(motor_pin[0][4], motor_pin[0][5], cmd->left_data) < 0)
             printf("FAILED\n");
     }
-    if(cmd->left_action == STOP_ACTION)
-    {
+
+    if(cmd->left_action == STOP_ACTION) {
         stop_motor(0);
     }
 
-    if(cmd->right_action == START_ACTION)
-    {
-        start_chassis();
-        if(cmd->right_data == POSITIVE_DIR)
-        {
+    if(cmd->right_action == START_ACTION) {
+        start_motor(1);
+        if(cmd->right_data == POSITIVE_DIR) {
             set_pin_high(motor_pin[1][0], motor_pin[1][1]);
             set_pin_low(motor_pin[1][2], motor_pin[1][3]);
-        }
-        else if(cmd->right_data == NEGATIVE_DIR)
-        {
+        } else if(cmd->right_data == NEGATIVE_DIR) {
             set_pin_low(motor_pin[1][0], motor_pin[1][1]);
             set_pin_high(motor_pin[1][2], motor_pin[1][3]);
         }
     }
-    if(cmd->right_action == SET_DUTY_ACTION)
-    {
+    if(cmd->right_action == SET_DUTY_ACTION) {
         if(pwm_set_duty(motor_pin[1][4], motor_pin[1][5], cmd->right_data) < 0)
             printf("FAILED!\n");
     }
-    if(cmd->right_action == STOP_ACTION)
-    {
+    if(cmd->right_action == STOP_ACTION) {
         stop_motor(1);
     }
 
