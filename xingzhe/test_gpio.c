@@ -1,7 +1,5 @@
 #include "gpio.h"
 
-#ifndef GPIO_USING_DTS
-
 #ifdef _cplusplus
 extern "C" {
 #endif
@@ -168,41 +166,6 @@ volatile void *gpio_addr[4] = {NULL, NULL, NULL, NULL};
 
 int gpio_fd = -1;
 
-void regist_gpio(int connector, int pin, int dir)
-{
-    int i;
-    
-    for(i=0;(i<sizeof(gpio_used)/sizeof(gpio_used[0]))&&(gpio_used[i][0] != 0);i++)
-    ;
-
-    gpio_used[i][0] = 1;
-    gpio_used[i][1] = connector;
-    gpio_used[i][2] = pin;
-    gpio_used[i][3] = dir;
-}
-
-static int varify_gpio()
-{
-    int i, j;
-    
-    for(i=0;i<sizeof(gpio_used)/sizeof(gpio_used[0]);i++)
-    {
-        if(gpio_used[i][0] == 0)
-            return 0;
-        
-        for(j=i+1;j<sizeof(gpio_used)/sizeof(gpio_used[0]);j++)
-        {
-            if((gpio_used[i][1] == gpio_used[j][1]) && (gpio_used[i][2] == gpio_used[j][2]))
-            {
-                printf("GPIO Verify Failed: %d-%d\n", gpio_used[i][1], gpio_used[i][2]);
-                return -1;
-            }
-        }
-    }
-    
-    return 0;
-}
-
 int gpio_set_dir(int connector, int pin, int dir)
 {
     volatile unsigned int* reg;
@@ -231,156 +194,40 @@ int gpio_set_dir(int connector, int pin, int dir)
     return 0;
 }
 
-int gpio_get_dir(int connector, int pin)
-{
-    unsigned int value;
-    int port, dir;
-
-    if((connector != 8) && (connector != 9))
-        return -1;
-    
-    if((pin < 1) || (pin > 46))
-        return -1;
-        
-    port = (connector == 8)?pin-1:pin+45;
-
-    if(gpio_bank[port] == -1)
-        return -1;
-
-    value = *(unsigned int *)(gpio_addr[gpio_bank[port]] + GPIO_OE_OFFSET);
-
-    if((value & gpio_bitfield[port]) == 0)
-    {
-        return DIR_OUT;
-    }
-    else
-    {
-        return DIR_IN;
-    }
-}
-
 int set_pin_high(int connector, int pin)
 {
     int port = (connector == 8)?pin-1:pin+45;
-
-    *((unsigned int *)(gpio_addr[gpio_bank[port]] + GPIO_SETDATAOUT_OFFSET)) |= gpio_bitfield[port];
+    unsigned int value = *((unsigned int *)(gpio_addr[gpio_bank[port]] + GPIO_DATAOUT_OFFSET));
+printf("PIN[%s] set HIGH:", gpio_name[port][7]);
+printf("0x%x -->", value);
+    *((unsigned int *)(gpio_addr[gpio_bank[port]] + GPIO_SETDATAOUT_OFFSET)) = gpio_bitfield[port];
+printf("0x%x\n", *((unsigned int *)(gpio_addr[gpio_bank[port]] + GPIO_DATAOUT_OFFSET)));
 
     return 0;
 }
 
 int set_pin_low(int connector, int pin)
 {
-    int port = (connector == 8)?pin-1:pin-1+46;
+    int port = (connector == 8)?pin-1:pin+45;
 
-    *((unsigned int *)(gpio_addr[gpio_bank[port]] + GPIO_CLEARDATAOUT_OFFSET)) |= gpio_bitfield[port];
+    unsigned int value = *((unsigned int *)(gpio_addr[gpio_bank[port]] + GPIO_DATAOUT_OFFSET));
+
+printf("PIN[%s] set LOW:", gpio_name[port][7]);
+printf("0x%x -->", value);
+    *((unsigned int *)(gpio_addr[gpio_bank[port]] + GPIO_CLEARDATAOUT_OFFSET)) = gpio_bitfield[port];
+printf("0x%x\n", *((unsigned int *)(gpio_addr[gpio_bank[port]] + GPIO_DATAOUT_OFFSET)));
 
     return 0;
 }
 
-int set_pin_irq_mode(int connector, int pin, enum GPIO_IRQ_MODE mode)
-{
-    int port = (connector == 8)?pin-1:pin+45;
-
-    switch(mode)
-    {
-        case GPIO_IRQ_LOW_LEVEL:
-            *((unsigned int *)(gpio_addr[gpio_bank[port]] + GPIO_LEVELDETECT0_OFFSET)) |= gpio_bitfield[port];
-            break;
-        case GPIO_IRQ_HIGH_LEVEL:
-            *((unsigned int *)(gpio_addr[gpio_bank[port]] + GPIO_LEVELDETECT1_OFFSET)) |= gpio_bitfield[port];
-            break;
-        case GPIO_IRQ_RISING_EDGE:
-            *((unsigned int *)(gpio_addr[gpio_bank[port]] + GPIO_RISINGDETECT_OFFSET)) |= gpio_bitfield[port];
-            break;
-        case GPIO_IRQ_FALLING_EDGE:
-            *((unsigned int *)(gpio_addr[gpio_bank[port]] + GPIO_FALLINGDETECT_OFFSET)) |= gpio_bitfield[port];
-            break;
-        default:
-            return -1;
-    }
-
-    return 0;
-}
-
-int is_pin_high(int connector, int pin)
-{
-    int port = (connector == 8)?pin-1:pin+45;
-    return ((*((unsigned int *)(gpio_addr[gpio_bank[port]] + GPIO_DATAIN_OFFSET)) & gpio_bitfield[port])!=0);
-}
-
-int is_pin_low(int connector, int pin)
-{
-    int port = (connector == 8)?pin-1:pin+45;
-    return ((*((unsigned int *)(gpio_addr[gpio_bank[port]] + GPIO_DATAIN_OFFSET)) & gpio_bitfield[port])==0);
-}
-
-static void print_all_mode()
-{
+void start_map() {
     int i;
-    unsigned int *p;
-
-    for(i = 0;i < 92;i++)
-    {
-        if(i < 46)
-            printf("P8[%d]: ", i+1);
-        else
-            printf("P9[%d]: ", i - 45);
-
-        if(gpio_bank[i] == -1)
-            printf("%s\n", gpio_name[i][0]);
-        else
-        {
-            p = (unsigned int *)(ctrl_addr + gpio_mode_offset[i]);
-            printf("addr:%p, offset=0x%x: 0x%x,%s\n", p, (gpio_mode_offset[i]), *p, gpio_name[i][*(unsigned int *)(ctrl_addr + gpio_mode_offset[i]) & 0x7]);
-        }
-
-    }
-}
-
- void print_all_dir()
-{
-    int i;
-
-    printf("################################\n");
-    for(i=0;i<46;i++)
-    {
-        printf("P8_%d,DIR=%d\n", i+1, gpio_get_dir(8, i+1));
-    }
-    for(i=0;i<46;i++)
-    {
-        printf("P9_%d,DIR=%d\n", i+1, gpio_get_dir(9, i+1));
-    }
-    printf("################################\n");
-}
-
-int gpio_init()
-{
-    int i;
-    int j;
-    
-    printf("gpio init ....\n");
-
-    if(varify_gpio()<0)
-        return -1;
-
     gpio_fd  = open("/dev/mem", O_RDWR);
     if(gpio_fd < 0)
     {
         printf("Open /dev/gpio_mem failed!\n");
-        return -1;
+        return ;
     }
-    ctrl_addr = (unsigned int *)mmap(0, CONTROL_LEN, PROT_READ | PROT_WRITE, MAP_SHARED , gpio_fd, CONTROL_MODULE);
-    if(ctrl_addr == MAP_FAILED)
-    {
-        printf("gpio_init: control module mmap failure!, __LINE__=%d\n", __LINE__);
-        return -1;
-    }
-
-  #ifdef DEBUG
-    printf("mmap ctrl address ok   : ");
-    printf("%p\n", ctrl_addr);
-    
-  #endif
 
     for (i = 0;i < 4;i++)
     {
@@ -388,30 +235,15 @@ int gpio_init()
         if(gpio_addr[i] == MAP_FAILED)
         {
             printf("gpio_init: gpio mmap failure!\n");
-            return -1;
+            return ;
         }
     }
-printf("BEFORE:\n");
-    print_all_dir();
 
-    for(i = 0;i < sizeof(gpio_used)/sizeof(gpio_used[0]);i++)
-    {
-        if(gpio_used[i][0] == 0)
-            break;
-
-        gpio_set_dir(gpio_used[i][1], gpio_used[i][2], gpio_used[i][3]);
-    }
-
-printf("AFTER:\n");
-    print_all_dir();
-
-	return 0;
+    gpio_set_dir(9,11,0);
+    gpio_set_dir(9,12,0);
 }
 
-int gpio_exit()
-{
-    if(gpio_fd > 0)
-    {
+void end_map() {
         munmap((void *)ctrl_addr, CONTROL_LEN);
         munmap((void *)&gpio_base[0], GPIOX_LEN);
         munmap((void *)&gpio_base[1], GPIOX_LEN);
@@ -419,48 +251,33 @@ int gpio_exit()
         munmap((void *)&gpio_base[3], GPIOX_LEN);
 
         close(gpio_fd);
-    }
 }
 
-void gpio_print_mode(int connector, int pin)
+
+int main(int argc, char* argv[])
 {
-    int port, mode;
+    int i;
+int blink=0;
 
-    port = (connector == 8)?pin-1:pin+45;
-
-    if(gpio_bank[port] == -1)
-        return;
-
-    mode = *(unsigned int *)(ctrl_addr + gpio_mode_offset[port]);
-
-    printf("PIN(P%d[%d]-%s), mode 0x%x: \n", connector, pin, gpio_name[port][7], mode);
-    if(BIT_IS_SET(mode, 6))
-        printf("Slower slew rate,");
-    else
-        printf("Faster slew rate,");
-
-    if(BIT_IS_SET(mode, 5))
-        printf("Receiver enabled,");
-    else
-        printf("Receiver disabled,");
-
-    if(BIT_IS_SET(mode, 4))
-        printf("Pullup,");
-    else
-        printf("Pulldown,");
-
-    if(BIT_IS_SET(mode, 3))
-        printf("Pull disabled,");
-    else
-        printf("Pull enabled,");
-
-    printf("MUX=%d\n", mode & 0x7);
+    for(i=0;i<20000;i++)
+    {
+    start_map();
+if(blink==0) {
+        set_pin_high(9,11);
+        set_pin_low(9,12);
+blink=1;
+} else {
+        printf("\n");
+        set_pin_low(9,11);
+        set_pin_high(9,12);
+blink=0;
 }
+        printf("\n");
+        usleep(100);
+end_map();
+    }
 
-#ifdef _cplusplus
+
+    return 0;
 }
-#endif
-
-
-#endif
 

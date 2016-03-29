@@ -167,8 +167,10 @@ void motor_init()
 
 int parser_motion_cmd(void * msg)
 {
-    if(msg == NULL)  return -1;
+print_all_dir();
 
+    if(msg == NULL)  return -1;
+printf("RECEIVE COMMAND:\n");
 	struct s_base_motion *cmd = (struct s_base_motion *)msg;
 
     if(cmd->left_action == START_ACTION) {
@@ -176,9 +178,11 @@ int parser_motion_cmd(void * msg)
         if(cmd->left_data == POSITIVE_DIR) {
             set_pin_high(motor_pin[0][0], motor_pin[0][1]);
             set_pin_low(motor_pin[0][2], motor_pin[0][3]);
+printf("LEFT POSITIVE\n");
         } else if(cmd->left_data == NEGATIVE_DIR) {
             set_pin_low(motor_pin[0][0], motor_pin[0][1]);
             set_pin_high(motor_pin[0][2], motor_pin[0][3]);
+printf("LEFT NEGATIVE\n");
         }
     }
     if(cmd->left_action == SET_DUTY_ACTION) {
@@ -187,15 +191,18 @@ int parser_motion_cmd(void * msg)
     }
 
     if(cmd->left_action == STOP_ACTION) {
+printf("LEFT STOP\n");
         stop_motor(0);
     }
 
     if(cmd->right_action == START_ACTION) {
         start_motor(1);
         if(cmd->right_data == POSITIVE_DIR) {
+printf("RIGHT POSITIVE\n");
             set_pin_high(motor_pin[1][0], motor_pin[1][1]);
             set_pin_low(motor_pin[1][2], motor_pin[1][3]);
         } else if(cmd->right_data == NEGATIVE_DIR) {
+printf("RIGHT NEGATIVE\n");
             set_pin_low(motor_pin[1][0], motor_pin[1][1]);
             set_pin_high(motor_pin[1][2], motor_pin[1][3]);
         }
@@ -205,6 +212,7 @@ int parser_motion_cmd(void * msg)
             printf("FAILED!\n");
     }
     if(cmd->right_action == STOP_ACTION) {
+printf("RIGHT STOP\n");
         stop_motor(1);
     }
 
