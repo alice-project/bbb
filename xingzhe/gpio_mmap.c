@@ -228,6 +228,7 @@ int gpio_set_dir(int connector, int pin, int dir)
     else
         *reg |= gpio_bitfield[port];
     
+    fdatasync(gpio_fd);
     return 0;
 }
 
@@ -263,7 +264,7 @@ int set_pin_high(int connector, int pin)
 {
     int port = (connector == 8)?pin-1:pin+45;
 
-    *((unsigned int *)(gpio_addr[gpio_bank[port]] + GPIO_SETDATAOUT_OFFSET)) |= gpio_bitfield[port];
+    *((unsigned int *)(gpio_addr[gpio_bank[port]] + GPIO_SETDATAOUT_OFFSET)) = gpio_bitfield[port];
 
     return 0;
 }
@@ -272,7 +273,7 @@ int set_pin_low(int connector, int pin)
 {
     int port = (connector == 8)?pin-1:pin-1+46;
 
-    *((unsigned int *)(gpio_addr[gpio_bank[port]] + GPIO_CLEARDATAOUT_OFFSET)) |= gpio_bitfield[port];
+    *((unsigned int *)(gpio_addr[gpio_bank[port]] + GPIO_CLEARDATAOUT_OFFSET)) = gpio_bitfield[port];
 
     return 0;
 }
@@ -353,6 +354,7 @@ static void print_all_mode()
     printf("################################\n");
 }
 
+
 int gpio_init()
 {
     int i;
@@ -391,8 +393,6 @@ int gpio_init()
             return -1;
         }
     }
-printf("BEFORE:\n");
-    print_all_dir();
 
     for(i = 0;i < sizeof(gpio_used)/sizeof(gpio_used[0]);i++)
     {
@@ -402,8 +402,7 @@ printf("BEFORE:\n");
         gpio_set_dir(gpio_used[i][1], gpio_used[i][2], gpio_used[i][3]);
     }
 
-printf("AFTER:\n");
-    print_all_dir();
+    fdatasync(gpio_fd);
 
 	return 0;
 }

@@ -167,10 +167,8 @@ void motor_init()
 
 int parser_motion_cmd(void * msg)
 {
-print_all_dir();
-
     if(msg == NULL)  return -1;
-printf("RECEIVE COMMAND:\n");
+
 	struct s_base_motion *cmd = (struct s_base_motion *)msg;
 
     if(cmd->left_action == START_ACTION) {
@@ -178,11 +176,9 @@ printf("RECEIVE COMMAND:\n");
         if(cmd->left_data == POSITIVE_DIR) {
             set_pin_high(motor_pin[0][0], motor_pin[0][1]);
             set_pin_low(motor_pin[0][2], motor_pin[0][3]);
-printf("LEFT POSITIVE\n");
         } else if(cmd->left_data == NEGATIVE_DIR) {
             set_pin_low(motor_pin[0][0], motor_pin[0][1]);
             set_pin_high(motor_pin[0][2], motor_pin[0][3]);
-printf("LEFT NEGATIVE\n");
         }
     }
     if(cmd->left_action == SET_DUTY_ACTION) {
@@ -191,18 +187,15 @@ printf("LEFT NEGATIVE\n");
     }
 
     if(cmd->left_action == STOP_ACTION) {
-printf("LEFT STOP\n");
         stop_motor(0);
     }
 
     if(cmd->right_action == START_ACTION) {
         start_motor(1);
         if(cmd->right_data == POSITIVE_DIR) {
-printf("RIGHT POSITIVE\n");
             set_pin_high(motor_pin[1][0], motor_pin[1][1]);
             set_pin_low(motor_pin[1][2], motor_pin[1][3]);
         } else if(cmd->right_data == NEGATIVE_DIR) {
-printf("RIGHT NEGATIVE\n");
             set_pin_low(motor_pin[1][0], motor_pin[1][1]);
             set_pin_high(motor_pin[1][2], motor_pin[1][3]);
         }
@@ -212,7 +205,6 @@ printf("RIGHT NEGATIVE\n");
             printf("FAILED!\n");
     }
     if(cmd->right_action == STOP_ACTION) {
-printf("RIGHT STOP\n");
         stop_motor(1);
     }
 
@@ -239,13 +231,14 @@ void *detect_speed(void *data)
 	*right_speed_mem=0;        
     for(;;)
     {
+
+/*
 		memcpy(&left_speed_pulse, left_speed_mem, sizeof(int));
 		left_speed_mm = (u_int32)((double)left_speed_pulse*(double)WHEEL_RADIUS*2*3.14/200000000.0)*10;
 		
 		memcpy(&right_speed_pulse, right_speed_mem, sizeof(int));
 		right_speed_mm = (u_int32)((double)right_speed_pulse*(double)WHEEL_RADIUS*2.0*3.14/200000000.0)*10;
 
-		/* intergal control */
 		speed_int += (left_speed_pulse - right_speed_pulse)*0.1;
 
 		cnt++;
@@ -258,6 +251,9 @@ void *detect_speed(void *data)
 		*left_speed_mem=0;
 		*right_speed_mem=0;        
 		usleep(100000);
+*/
+printf("%d:%d\n", *left_speed_mem, *right_speed_mem);
+sleep(1);
     }
 
     return NULL;

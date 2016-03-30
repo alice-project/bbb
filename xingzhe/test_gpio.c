@@ -190,6 +190,8 @@ int gpio_set_dir(int connector, int pin, int dir)
         *reg &= ~(gpio_bitfield[port]);
     else
         *reg |= gpio_bitfield[port];
+
+fdatasync(gpio_fd);
     
     return 0;
 }
@@ -202,6 +204,8 @@ printf("PIN[%s] set HIGH:", gpio_name[port][7]);
 printf("0x%x -->", value);
     *((unsigned int *)(gpio_addr[gpio_bank[port]] + GPIO_SETDATAOUT_OFFSET)) = gpio_bitfield[port];
 printf("0x%x\n", *((unsigned int *)(gpio_addr[gpio_bank[port]] + GPIO_DATAOUT_OFFSET)));
+
+//fdatasync(gpio_fd);
 
     return 0;
 }
@@ -216,6 +220,8 @@ printf("PIN[%s] set LOW:", gpio_name[port][7]);
 printf("0x%x -->", value);
     *((unsigned int *)(gpio_addr[gpio_bank[port]] + GPIO_CLEARDATAOUT_OFFSET)) = gpio_bitfield[port];
 printf("0x%x\n", *((unsigned int *)(gpio_addr[gpio_bank[port]] + GPIO_DATAOUT_OFFSET)));
+
+//fdatasync(gpio_fd);
 
     return 0;
 }
@@ -259,9 +265,10 @@ int main(int argc, char* argv[])
     int i;
 int blink=0;
 
-    for(i=0;i<20000;i++)
-    {
     start_map();
+
+    for(i=0;i<20;i++)
+    {
 if(blink==0) {
         set_pin_high(9,11);
         set_pin_low(9,12);
@@ -273,10 +280,10 @@ blink=1;
 blink=0;
 }
         printf("\n");
-        usleep(100);
-end_map();
+        sleep(1);
     }
 
+end_map();
 
     return 0;
 }
