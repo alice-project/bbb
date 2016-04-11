@@ -168,6 +168,56 @@ volatile void *gpio_addr[4] = {NULL, NULL, NULL, NULL};
 
 int gpio_fd = -1;
 
+void start_mmap()
+{
+    int i;
+
+    gpio_fd  = open("/dev/mem", O_RDWR);
+    if(gpio_fd < 0)
+    {
+        printf("Open /dev/gpio_mem failed!\n");
+        return;
+    }
+    ctrl_addr = (unsigned int *)mmap(0, CONTROL_LEN, PROT_READ | PROT_WRITE, MAP_SHARED , gpio_fd, CONTROL_MODULE);
+    if(ctrl_addr == MAP_FAILED)
+    {
+        printf("gpio_init: control module mmap failure!, __LINE__=%d\n", __LINE__);
+        return;
+    }
+
+  #ifdef DEBUG
+    printf("mmap ctrl address ok   : ");
+    printf("%p\n", ctrl_addr);
+    
+  #endif
+
+    for (i = 0;i < 4;i++)
+    {
+        gpio_addr[i] = mmap(0, GPIOX_LEN, PROT_READ | PROT_WRITE, MAP_SHARED , gpio_fd, gpio_base[i]);
+        if(gpio_addr[i] == MAP_FAILED)
+        {
+            printf("gpio_init: gpio mmap failure!\n");
+            return;
+        }
+    }
+}
+
+void stop_mmap()
+{
+    if(gpio_fd > 0)
+    {
+        munmap((void *)ctrl_addr, CONTROL_LEN);
+        munmap((void *)&gpio_base[0], GPIOX_LEN);
+        munmap((void *)&gpio_base[1], GPIOX_LEN);
+        munmap((void *)&gpio_base[2], GPIOX_LEN);
+        munmap((void *)&gpio_base[3], GPIOX_LEN);
+
+        close(gpio_fd);
+        gpio_fd = -1;
+    }
+}
+
+
 void regist_gpio(int connector, int pin, int dir)
 {
     int i;
@@ -221,6 +271,8 @@ int gpio_set_dir(int connector, int pin, int dir)
     if(gpio_bank[port] == -1)
         return -1;
 
+    start_mmap();
+
     reg = (unsigned int *)(gpio_addr[gpio_bank[port]] + GPIO_OE_OFFSET);
 
     if (dir == DIR_OUT)
@@ -228,7 +280,7 @@ int gpio_set_dir(int connector, int pin, int dir)
     else
         *reg |= gpio_bitfield[port];
     
-    fdatasync(gpio_fd);
+    stop_mmap();
     return 0;
 }
 
@@ -248,7 +300,9 @@ int gpio_get_dir(int connector, int pin)
     if(gpio_bank[port] == -1)
         return -1;
 
+    start_mmap();
     value = *(unsigned int *)(gpio_addr[gpio_bank[port]] + GPIO_OE_OFFSET);
+    stop_mmap();
 
     if((value & gpio_bitfield[port]) == 0)
     {
@@ -264,8 +318,9 @@ int set_pin_high(int connector, int pin)
 {
     int port = (connector == 8)?pin-1:pin+45;
 
+    start_mmap();
     *((unsigned int *)(gpio_addr[gpio_bank[port]] + GPIO_SETDATAOUT_OFFSET)) = gpio_bitfield[port];
-
+    stop_mmap();
     return 0;
 }
 
@@ -273,7 +328,9 @@ int set_pin_low(int connector, int pin)
 {
     int port = (connector == 8)?pin-1:pin-1+46;
 
+    start_mmap();
     *((unsigned int *)(gpio_addr[gpio_bank[port]] + GPIO_CLEARDATAOUT_OFFSET)) = gpio_bitfield[port];
+    stop_mmap();
 
     return 0;
 }
@@ -282,6 +339,7 @@ int set_pin_irq_mode(int connector, int pin, enum GPIO_IRQ_MODE mode)
 {
     int port = (connector == 8)?pin-1:pin+45;
 
+    start_mmap();
     switch(mode)
     {
         case GPIO_IRQ_LOW_LEVEL:
@@ -297,8 +355,10 @@ int set_pin_irq_mode(int connector, int pin, enum GPIO_IRQ_MODE mode)
             *((unsigned int *)(gpio_addr[gpio_bank[port]] + GPIO_FALLINGDETECT_OFFSET)) |= gpio_bitfield[port];
             break;
         default:
-            return -1;
+            break;
     }
+
+    stop_mmap();
 
     return 0;
 }
@@ -306,13 +366,19 @@ int set_pin_irq_mode(int connector, int pin, enum GPIO_IRQ_MODE mode)
 int is_pin_high(int connector, int pin)
 {
     int port = (connector == 8)?pin-1:pin+45;
-    return ((*((unsigned int *)(gpio_addr[gpio_bank[port]] + GPIO_DATAIN_OFFSET)) & gpio_bitfield[port])!=0);
+    start_mmap();
+    int value = *(unsigned int *)(gpio_addr[gpio_bank[port]] + GPIO_DATAIN_OFFSET) & gpio_bitfield[port];
+    stop_mmap();
+    return (value!=0);
 }
 
 int is_pin_low(int connector, int pin)
 {
     int port = (connector == 8)?pin-1:pin+45;
-    return ((*((unsigned int *)(gpio_addr[gpio_bank[port]] + GPIO_DATAIN_OFFSET)) & gpio_bitfield[port])==0);
+    start_mmap();
+    int value = *(unsigned int *)(gpio_addr[gpio_bank[port]] + GPIO_DATAIN_OFFSET) & gpio_bitfield[port];
+    stop_mmap();
+    return (value==0);
 }
 
 static void print_all_mode()
@@ -358,41 +424,13 @@ static void print_all_mode()
 int gpio_init()
 {
     int i;
-    int j;
     
     printf("gpio init ....\n");
 
     if(varify_gpio()<0)
         return -1;
 
-    gpio_fd  = open("/dev/mem", O_RDWR);
-    if(gpio_fd < 0)
-    {
-        printf("Open /dev/gpio_mem failed!\n");
-        return -1;
-    }
-    ctrl_addr = (unsigned int *)mmap(0, CONTROL_LEN, PROT_READ | PROT_WRITE, MAP_SHARED , gpio_fd, CONTROL_MODULE);
-    if(ctrl_addr == MAP_FAILED)
-    {
-        printf("gpio_init: control module mmap failure!, __LINE__=%d\n", __LINE__);
-        return -1;
-    }
-
-  #ifdef DEBUG
-    printf("mmap ctrl address ok   : ");
-    printf("%p\n", ctrl_addr);
-    
-  #endif
-
-    for (i = 0;i < 4;i++)
-    {
-        gpio_addr[i] = mmap(0, GPIOX_LEN, PROT_READ | PROT_WRITE, MAP_SHARED , gpio_fd, gpio_base[i]);
-        if(gpio_addr[i] == MAP_FAILED)
-        {
-            printf("gpio_init: gpio mmap failure!\n");
-            return -1;
-        }
-    }
+    start_mmap();
 
     for(i = 0;i < sizeof(gpio_used)/sizeof(gpio_used[0]);i++)
     {
@@ -402,7 +440,7 @@ int gpio_init()
         gpio_set_dir(gpio_used[i][1], gpio_used[i][2], gpio_used[i][3]);
     }
 
-    fdatasync(gpio_fd);
+    stop_mmap();
 
 	return 0;
 }
@@ -418,6 +456,7 @@ int gpio_exit()
         munmap((void *)&gpio_base[3], GPIOX_LEN);
 
         close(gpio_fd);
+        gpio_fd = -1;
     }
 }
 

@@ -24,8 +24,8 @@ int32 speed_int;
 const int motor_pin[][6] = {
     /* connector, PIN */
     /* dir ctrl, dir ctrl, speed ctrl  */
-    {9, 13, 9, 14, 8, 19},        /* Left DC MOTOR control & dir */
-    {9, 11, 9, 12, 8, 13},        /* Right DC MOTOR control & dir */
+    {9, 11, 9, 12, 8, 13},        /* Left DC MOTOR control & dir */
+    {9, 13, 9, 14, 8, 19},        /* Right DC MOTOR control & dir */
 };
 
 const int motor_decoder_pin[2][2] = {
@@ -66,7 +66,11 @@ int stop_motor(int m)
     if(m==0)
     {
         pwm_stop(motor_pin[0][4],motor_pin[0][5]);
+        set_pin_low(motor_pin[0][0], motor_pin[0][1]);
+        set_pin_low(motor_pin[0][2], motor_pin[0][3]);
     } else {
+        set_pin_low(motor_pin[1][0], motor_pin[1][1]);
+        set_pin_low(motor_pin[1][2], motor_pin[1][3]);
         pwm_stop(motor_pin[1][4],motor_pin[1][5]);
     }
 
@@ -252,7 +256,7 @@ void *detect_speed(void *data)
 		*right_speed_mem=0;        
 		usleep(100000);
 */
-printf("%d:%d\n", *left_speed_mem, *right_speed_mem);
+//printf("%d:%d\n", *left_speed_mem, *right_speed_mem);
 sleep(1);
     }
 

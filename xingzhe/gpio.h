@@ -7,8 +7,14 @@
 #include <time.h>
 #include <unistd.h>
 
+#include "xz_config.h"
+
 #ifndef __GPIO_H__
 #define __GPIO_H__
+
+#ifdef ENABLE_GPIO_DTS
+#define GPIO_USING_DTS
+#endif
 
 enum {
     GPIO_MODE_0 = 0,
