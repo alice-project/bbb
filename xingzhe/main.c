@@ -3,6 +3,7 @@
 #include <pthread.h>
 #include <unistd.h>
 #include <syslog.h>
+#include <signal.h>
 
 #include "xz_config.h"
 
@@ -31,6 +32,12 @@ static int fd_wtdog=-1;
 extern void *wifi_location(void *data);
 
 pthread_mutex_t mutex_i2c;
+
+
+static safe_exit()
+{
+    r_timer_safe_exit();
+}
 
 int system_init() 
 {
@@ -120,13 +127,16 @@ int system_init()
         printf("\n!!! FAILED to open /dev/watchdog, errno: %d, %s\n", err, strerror(err));  
         syslog(LOG_WARNING, "FAILED to open /dev/watchdog, errno: %d, %s", err, strerror(err));  
     }
+
+    /* ignore SIGPIPE (send by OS if transmitting to closed TCP sockets) */
+//    signal(SIGPIPE, SIG_IGN);
+
+    /* register signal handler for <CTRL>+C in order to clean up */
+//    if(signal(SIGINT, safe_exit) == SIG_ERR) {
+//         exit(EXIT_FAILURE);
+//    }
     
     return 0;
-}
-
-static safe_exit()
-{
-    r_timer_safe_exit();
 }
 
 static void feed_wtdog()

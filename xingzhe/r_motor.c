@@ -232,12 +232,18 @@ void *detect_speed(void *data)
 
 	u_int32 new_pwm;
 	*left_speed_mem=0;
+	*(left_speed_mem+1)=0;
 	*right_speed_mem=0;        
+	*(right_speed_mem+1)=0;
     for(;;)
     {
-
-/*
-		memcpy(&left_speed_pulse, left_speed_mem, sizeof(int));
+*left_speed_mem=1;
+while(*left_speed_mem != 2) {
+usleep(100);
+}
+printf("left side:%d\n", *(left_speed_mem+1));
+usleep(100000);
+/*		memcpy(&left_speed_pulse, left_speed_mem, sizeof(int));
 		left_speed_mm = (u_int32)((double)left_speed_pulse*(double)WHEEL_RADIUS*2*3.14/200000000.0)*10;
 		
 		memcpy(&right_speed_pulse, right_speed_mem, sizeof(int));
@@ -252,12 +258,10 @@ void *detect_speed(void *data)
 
 			cnt=0;
 		}
-		*left_speed_mem=0;
-		*right_speed_mem=0;        
+*/        
 		usleep(100000);
-*/
-//printf("%d:%d\n", *left_speed_mem, *right_speed_mem);
-sleep(1);
+printf("left_speed: %d:%d \n", *(unsigned int *)left_speed_mem, *(unsigned int *)(left_speed_mem+1));
+printf("right_speed: %d:%d \n", *(unsigned int *)right_speed_mem, *(unsigned int *)(right_speed_mem+1));
     }
 
     return NULL;

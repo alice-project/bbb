@@ -56,13 +56,19 @@ DELAY:
 /*************** PRU0 ***********************/
 .macro LEFT_MOTOR_SPEED_PROC
     MOV r0, CONTROL_0
-    MOV r1, 33       //
+    MOV r1, 334       //
 
     MOV r2, 0         // r2 stores the cycle counter
     MOV r3, 0xffffffff    // r3 stores infinite value
     MOV r5, 0         // zero
-	
+
 LOOP:
+
+    // wair until application start detect
+WAIT_FOR_DETECT:
+    LBCO r10, CONST_PRUDRAM, 0, 4
+    QBNE WAIT_FOR_DETECT, r10, 1
+	
     MOV r4, 0         // r4 stores the rotation of the "wheel"
 
 	LBBO r6, r0, 0, 4  // get configuration
@@ -70,7 +76,7 @@ LOOP:
 	SET r6.t3	 // PRU Cycle Counter Enabled
 	SBBO r6, r0, 0, 4  // save configuration
 
-	SBBO r5, r0, 0xc, 4   // zero the cycle counter
+	SBBO r5, r0, 0xc, 4   // clear the cycle counter
 	
 WAIT_FOR_PULSE:
     WBS r31.t14
@@ -85,10 +91,14 @@ STORE_RESULT:
 	SBBO r6, r0, 0, 4
 
     LBBO r2, r0, 0xC, 4  // read the cycle counter
-    //Store result in into memory using constant table
-    SBCO r2, CONST_PRUDRAM, 0, 4
 
-	SBCO r4, CONST_PRUDRAM, 4, 4
+    // memory[0] stores flag: 0=IDLE, 1=in-processing, 2=finish
+    //Store result in into memory using constant table
+    //
+    SBCO r2, CONST_PRUDRAM, 4, 4
+
+    MOV r10, 2
+	SBCO r10, CONST_PRUDRAM, 0, 4
 
     JMP LOOP
 
@@ -100,13 +110,19 @@ ENDM:
 /*************** PRU1 ***********************/
 .macro RIGHT_MOTOR_SPEED_PROC
     MOV r0, CONTROL_1
-    MOV r1, 33       // 
+    MOV r1, 334       // 
 
     MOV r2, 0         // r2 stores the cycle counter
     MOV r3, 0xffffffff    // r3 stores infinite value
     MOV r5, 0         // zero
-	
+
 LOOP:
+
+    // wair until application start detect
+WAIT_FOR_DETECT:
+    LBCO r10, CONST_PRUDRAM, 0, 4
+    QBNE WAIT_FOR_DETECT, r10, 1
+	
     MOV r4, 0         // r4 stores the rotation of the "wheel"
 
 	LBBO r6, r0, 0, 4  // get configuration
@@ -114,7 +130,7 @@ LOOP:
 	SET r6.t3	 // PRU Cycle Counter Enabled
 	SBBO r6, r0, 0, 4  // save configuration
 
-	SBBO r5, r0, 0xc, 4   // zero the cycle counter
+	SBBO r5, r0, 0xc, 4   // clear the cycle counter
 	
 WAIT_FOR_PULSE:
     WBS r31.t8
@@ -130,9 +146,10 @@ STORE_RESULT:
 
     LBBO r2, r0, 0xC, 4  // read the cycle counter
     //Store result in into memory using constant table
-    SBCO r2, CONST_PRUDRAM, 0, 4
+    SBCO r2, CONST_PRUDRAM, 4, 4
 
-	SBCO r4, CONST_PRUDRAM, 4, 4
+    MOV r10, 2
+	SBCO r10, CONST_PRUDRAM, 0, 4
 
     JMP LOOP
 ENDM:

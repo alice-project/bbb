@@ -46,8 +46,8 @@
 		"P9.14",    /* gpio1.18 */
 
 	/* ------ DC MOTOR Decoder ------ */
-        "P8.16",    /* pr1_pru0_pru_r31_14,  right side */
-        "P8.27",    /* pr1_pru1_pru_r31_8,  leftside */
+        "P8.16",    /* pr1_pru0_pru_r31_14,  left side */
+        "P8.27",    /* pr1_pru1_pru_r31_8,  right side */
 		"pru0",
 		"pru1",
 		"pruss",
